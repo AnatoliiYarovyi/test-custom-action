@@ -20,11 +20,13 @@ try {
 
 	const getProject = async () => {
 		const response = await fetch(
-			`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}`,
-			{ headers: { Authorization: `Bearer ${apiToken}` } },
+			`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${accountId}/${projectName}`,
+			{
+				headers: { token: apiToken },
+			},
 		);
 		if (response.status !== 200) {
-			console.error(`Cloudflare API returned non-200: ${response.status}`);
+			console.error(`API returned non-200: ${response.status}`);
 			const json = await response.text();
 			console.error(`API returned: ${json}`);
 			throw new Error("Failed to get Pages project, API returned non-200");
@@ -50,8 +52,10 @@ try {
     `;
 
 		const response = await fetch(
-			`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments`,
-			{ headers: { Authorization: `Bearer ${apiToken}` } },
+			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${accountId}/${projectName}`,
+			{
+				headers: { token: apiToken },
+			},
 		);
 		const {
 			result: [deployment],
