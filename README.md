@@ -17,7 +17,7 @@ The time we greeted you.
 ## Example usage
 
 ```yaml
-uses: actions/test-custom-action@v0.0.4
+uses: AnatoliiYarovyi/test-custom-action@v0.0.4
 with:
   who-to-greet: "Mona the Octocat"
 ```
