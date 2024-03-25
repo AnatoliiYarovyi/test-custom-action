@@ -1,13 +1,31 @@
-name: "Hello World"
-description: "Greet someone and record the time"
+name: "Test-deploy GitHub Action"
+description: "Publish to Cloudflare Pages"
 inputs:
-  who-to-greet: # id of input
-    description: "Who to greet"
+  apiToken:
+    description: "Cloudflare API Token"
     required: true
-    default: "World"
-outputs:
-  time: # id of output
-    description: "The time we greeted you"
+  accountId:
+    description: "Cloudflare Account ID"
+    required: true
+  projectName:
+    description: "The name of the Pages project to upload to"
+    required: true
+  directory:
+    description: "The directory of static assets to upload"
+    required: true
+  gitHubToken:
+    description: "GitHub Token"
+    required: false
+  branch:
+    description: "The name of the branch you want to deploy to"
+    required: false
+  workingDirectory:
+    description: "The working directory in which to run Wrangler"
+    required: false
+  wranglerVersion:
+    description: "The version of Wrangler to use"
+    required: false
+    default: "2"
 runs:
   using: "node20"
   main: "index.js"
