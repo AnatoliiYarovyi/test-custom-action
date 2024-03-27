@@ -40807,20 +40807,16 @@ try {
   const wranglerVersion = (0, import_core.getInput)("wranglerVersion", { required: false });
   const getProject = async () => {
     const response = await (0, import_undici.fetch)(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}`,
-      { headers: { Authorization: `Bearer ${apiToken}` } }
+      `https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${accountId}/${projectName}`,
+      {
+        headers: { token: apiToken }
+      }
     );
-    if (response.status !== 200) {
-      console.error(`Cloudflare API returned non-200: ${response.status}`);
-      const json = await response.text();
-      console.error(`API returned: ${json}`);
-      throw new Error("Failed to get Pages project, API returned non-200");
+    if (!response.ok) {
+      throw new Error("Failed to fetch project data");
     }
-    const { result } = await response.json();
-    if (result === null) {
-      throw new Error("Failed to get Pages project, project does not exist. Check the project name or create it!");
-    }
-    return result;
+    const projectData = await response.json();
+    return projectData;
   };
   const createPagesDeployment = async () => {
     await src_default.in(import_node_path.default.join(process.cwd(), workingDirectory))`
@@ -40832,13 +40828,16 @@ try {
     $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
     `;
     const response = await (0, import_undici.fetch)(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments`,
-      { headers: { Authorization: `Bearer ${apiToken}` } }
+      `https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${accountId}/${projectName}`,
+      {
+        headers: { token: apiToken }
+      }
     );
-    const {
-      result: [deployment]
-    } = await response.json();
-    return deployment;
+    if (!response.ok) {
+      throw new Error("Failed to fetch deployment data");
+    }
+    const deploymentData = await response.json();
+    return deploymentData;
   };
   const githubBranch = import_process.env.GITHUB_HEAD_REF || import_process.env.GITHUB_REF_NAME;
   const createGitHubDeployment = async (octokit, productionEnvironment, environment) => {
