@@ -20,22 +20,18 @@ try {
 
 	const getProject = async () => {
 		const response = await fetch(
-			`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}`,
-			{ headers: { Authorization: `Bearer ${apiToken}` } },
+			`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${accountId}/${projectName}`,
+			{
+				headers: { token: apiToken },
+			},
 		);
-		if (response.status !== 200) {
-			console.error(`Cloudflare API returned non-200: ${response.status}`);
-			const json = await response.text();
-			console.error(`API returned: ${json}`);
-			throw new Error("Failed to get Pages project, API returned non-200");
+
+		if (!response.ok) {
+			throw new Error("Failed to fetch project data");
 		}
 
-		const { result } = (await response.json()) as { result: Project | null };
-		if (result === null) {
-			throw new Error("Failed to get Pages project, project does not exist. Check the project name or create it!");
-		}
-
-		return result;
+		const projectData = await response.json();
+		return projectData as Project;
 	};
 
 	const createPagesDeployment = async () => {
@@ -50,14 +46,18 @@ try {
     `;
 
 		const response = await fetch(
-			`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments`,
-			{ headers: { Authorization: `Bearer ${apiToken}` } },
+			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${accountId}/${projectName}`,
+			{
+				headers: { token: apiToken },
+			},
 		);
-		const {
-			result: [deployment],
-		} = (await response.json()) as { result: Deployment[] };
 
-		return deployment;
+		if (!response.ok) {
+			throw new Error("Failed to fetch deployment data");
+		}
+
+		const deploymentData = await response.json();
+		return deploymentData as Deployment;
 	};
 
 	const githubBranch = env.GITHUB_HEAD_REF || env.GITHUB_REF_NAME;
