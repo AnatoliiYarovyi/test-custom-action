@@ -113,6 +113,10 @@ try {
 		const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
 
 		let status = "⚡️  Deployment in progress...";
+		console.log("==================================");
+		console.log("deployStage?.status: ", deployStage?.status);
+		console.log("==================================");
+
 		if (deployStage?.status === "success") {
 			status = "✅  Deploy successful!";
 		} else if (deployStage?.status === "failure") {

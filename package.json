@@ -15,7 +15,7 @@
 		"@actions/github": "^6.0.0",
 		"@cloudflare/types": "^6.27.0",
 		"shellac": "^0.8.0",
-		"undici": "^6.10.1"
+		"undici": "^6.10.2"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.30",

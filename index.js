@@ -20816,7 +20816,7 @@ var require_connect2 = __commonJS({
     function onConnectTimeout(socket) {
       let message = "Connect Timeout Error";
       if (Array.isArray(socket.autoSelectFamilyAttemptedAddresses)) {
-        message = +` (attempted addresses: ${socket.autoSelectFamilyAttemptedAddresses.join(", ")})`;
+        message += ` (attempted addresses: ${socket.autoSelectFamilyAttemptedAddresses.join(", ")})`;
       }
       util.destroy(socket, new ConnectTimeoutError(message));
     }
@@ -22260,12 +22260,30 @@ var require_util9 = __commonJS({
       }
       let location = response.headersList.get("location", true);
       if (location !== null && isValidHeaderValue(location)) {
+        if (!isValidEncodedURL(location)) {
+          location = normalizeBinaryStringToUtf8(location);
+        }
         location = new URL(location, responseURL(response));
       }
       if (location && !location.hash) {
         location.hash = requestFragment;
       }
       return location;
+    }
+    function isValidEncodedURL(url) {
+      for (const c of url) {
+        const code = c.charCodeAt(0);
+        if (code >= 128) {
+          return false;
+        }
+        if (code >= 0 && code <= 31 || code === 127) {
+          return false;
+        }
+      }
+      return true;
+    }
+    function normalizeBinaryStringToUtf8(value) {
+      return Buffer.from(value, "binary").toString("utf8");
     }
     function requestCurrentURL(request) {
       return request.urlList[request.urlList.length - 1];
@@ -25241,6 +25259,11 @@ var require_client_h2 = __commonJS({
         if (request.onHeaders(Number(statusCode), realHeaders, stream.resume.bind(stream), "") === false) {
           stream.pause();
         }
+        stream.on("data", (chunk) => {
+          if (request.onData(chunk) === false) {
+            stream.pause();
+          }
+        });
       });
       stream.once("end", () => {
         if (stream.state?.state == null || stream.state.state < 6) {
@@ -25254,11 +25277,6 @@ var require_client_h2 = __commonJS({
         const err = new InformationalError("HTTP/2: stream half-closed (remote)");
         errorRequest(client, request, err);
         util.destroy(stream, err);
-      });
-      stream.on("data", (chunk) => {
-        if (request.onData(chunk) === false) {
-          stream.pause();
-        }
       });
       stream.once("close", () => {
         session[kOpenStreams] -= 1;
@@ -27028,12 +27046,11 @@ var require_retry_handler = __commonJS({
             }
             const { start, size, end = size } = range;
             assert(
-              start != null && Number.isFinite(start) && this.start !== start,
+              start != null && Number.isFinite(start),
               "content-range mismatch"
             );
-            assert(Number.isFinite(start));
             assert(
-              end != null && Number.isFinite(end) && this.end !== end,
+              end != null && Number.isFinite(end),
               "invalid content-length"
             );
             this.start = start;
@@ -33684,7 +33701,7 @@ var require_cookies2 = __commonJS({
       cookie = webidl.converters.Cookie(cookie);
       const str = stringify2(cookie);
       if (str) {
-        headers.append("Set-Cookie", stringify2(cookie));
+        headers.append("Set-Cookie", str);
       }
     }
     webidl.converters.DeleteCookieAttributes = webidl.dictionaryConverter([
@@ -34105,7 +34122,6 @@ var require_util14 = __commonJS({
       const event = new eventConstructor(e, eventInitDict);
       target.dispatchEvent(event);
     }
-    var textDecoder = new TextDecoder("utf-8", { fatal: true });
     function websocketMessageReceived(ws, type, data) {
       if (ws[kReadyState] !== states.OPEN) {
         return;
@@ -34113,7 +34129,7 @@ var require_util14 = __commonJS({
       let dataForEvent;
       if (type === opcodes.TEXT) {
         try {
-          dataForEvent = textDecoder.decode(data);
+          dataForEvent = new TextDecoder("utf-8", { fatal: true }).decode(data);
         } catch {
           failWebsocketConnection(ws, "Received invalid UTF-8 in text frame.");
           return;
@@ -34407,7 +34423,6 @@ var require_receiver2 = __commonJS({
     var { channels } = require_diagnostics();
     var { isValidStatusCode, failWebsocketConnection, websocketMessageReceived } = require_util14();
     var { WebsocketFrameSend } = require_frame2();
-    var textDecoder = new TextDecoder("utf-8", { fatal: true });
     var _buffers, _byteOffset, _state, _info, _fragments;
     var ByteParser = class extends Writable {
       constructor(ws) {
@@ -34611,7 +34626,7 @@ var require_receiver2 = __commonJS({
           return null;
         }
         try {
-          reason = textDecoder.decode(reason);
+          reason = new TextDecoder("utf-8", { fatal: true }).decode(reason);
         } catch {
           return null;
         }
@@ -35327,6 +35342,7 @@ var require_eventsource = __commonJS({
     var { MessageEvent } = require_events2();
     var { isNetworkError } = require_response2();
     var { delay } = require_util15();
+    var { kEnumerableProperty } = require_util8();
     var experimentalWarned = false;
     var defaultReconnectionTime = 3e3;
     var CONNECTING = 0;
@@ -35602,6 +35618,15 @@ var require_eventsource = __commonJS({
     };
     Object.defineProperties(EventSource, constantsPropertyDescriptors);
     Object.defineProperties(EventSource.prototype, constantsPropertyDescriptors);
+    Object.defineProperties(EventSource.prototype, {
+      close: kEnumerableProperty,
+      onerror: kEnumerableProperty,
+      onmessage: kEnumerableProperty,
+      onopen: kEnumerableProperty,
+      readyState: kEnumerableProperty,
+      url: kEnumerableProperty,
+      withCredentials: kEnumerableProperty
+    });
     webidl.converters.EventSourceInitDict = webidl.dictionaryConverter([
       { key: "withCredentials", converter: webidl.converters.boolean, defaultValue: false }
     ]);
@@ -40880,6 +40905,9 @@ try {
   const createJobSummary = async ({ deployment, aliasUrl }) => {
     const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
     let status = "\u26A1\uFE0F  Deployment in progress...";
+    console.log("==================================");
+    console.log("deployStage?.status: ", deployStage?.status);
+    console.log("==================================");
     if (deployStage?.status === "success") {
       status = "\u2705  Deploy successful!";
     } else if (deployStage?.status === "failure") {
