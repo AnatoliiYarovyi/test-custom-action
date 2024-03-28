@@ -39800,6 +39800,10 @@ try {
   const branch = (0, import_core.getInput)("branch", { required: false });
   const getProject = async () => {
     const response = await (0, import_undici.fetch)(`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${projectName}`);
+    console.log("=============================================");
+    console.log("projectName: ", projectName);
+    console.log("response.ok: ", response?.ok);
+    console.log("=============================================");
     if (!response.ok) {
       throw new Error("Failed to fetch project data");
     }

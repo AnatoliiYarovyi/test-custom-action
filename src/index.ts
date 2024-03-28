@@ -15,6 +15,11 @@ try {
 	const getProject = async () => {
 		const response = await fetch(`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${projectName}`);
 
+		console.log("=============================================");
+		console.log("projectName: ", projectName);
+		console.log("response.ok: ", response?.ok);
+		console.log("=============================================");
+
 		if (!response.ok) {
 			throw new Error("Failed to fetch project data");
 		}
