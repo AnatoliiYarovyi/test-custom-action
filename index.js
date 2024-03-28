@@ -39810,7 +39810,7 @@ try {
   };
   const createPagesDeployment = async () => {
     console.log("=============================================");
-    console.log("workingDirectory: ", workingDirectory);
+    console.log("workingDirectory: ", workingDirectory, typeof workingDirectory, JSON.stringify(workingDirectory));
     console.log("wranglerVersion: ", wranglerVersion);
     console.log("=============================================");
     const response = await (0, import_undici.fetch)(

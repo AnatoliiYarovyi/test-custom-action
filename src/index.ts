@@ -27,7 +27,7 @@ try {
 
 	const createPagesDeployment = async () => {
 		console.log("=============================================");
-		console.log("workingDirectory: ", workingDirectory);
+		console.log("workingDirectory: ", workingDirectory, typeof workingDirectory, JSON.stringify(workingDirectory));
 		console.log("wranglerVersion: ", wranglerVersion);
 		console.log("=============================================");
 
