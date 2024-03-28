@@ -39791,8 +39791,8 @@ var require_github = __commonJS({
 // src/index.ts
 var import_core = __toESM(require_core());
 var import_github = __toESM(require_github());
-var import_undici = __toESM(require_undici2());
 var import_process = require("process");
+var import_undici = __toESM(require_undici2());
 try {
   const projectName = (0, import_core.getInput)("projectName", { required: true });
   const directory = (0, import_core.getInput)("directory", { required: true });
@@ -39811,7 +39811,8 @@ try {
   const createPagesDeployment = async () => {
     console.log("=============================================");
     console.log("workingDirectory: ", workingDirectory, typeof workingDirectory, JSON.stringify(workingDirectory));
-    console.log("wranglerVersion: ", wranglerVersion);
+    console.log("wranglerVersion: ", wranglerVersion, typeof wranglerVersion, JSON.stringify(wranglerVersion));
+    console.log("branch: ", branch, typeof branch, JSON.stringify(branch));
     console.log("=============================================");
     const response = await (0, import_undici.fetch)(
       `https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch}`

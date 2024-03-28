@@ -28,7 +28,8 @@ try {
 	const createPagesDeployment = async () => {
 		console.log("=============================================");
 		console.log("workingDirectory: ", workingDirectory, typeof workingDirectory, JSON.stringify(workingDirectory));
-		console.log("wranglerVersion: ", wranglerVersion);
+		console.log("wranglerVersion: ", wranglerVersion, typeof wranglerVersion, JSON.stringify(wranglerVersion));
+		console.log("branch: ", branch, typeof branch, JSON.stringify(branch));
 		console.log("=============================================");
 
 		const response = await fetch(
