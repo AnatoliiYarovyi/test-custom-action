@@ -78,7 +78,7 @@ try {
 			environment: environmentName,
 			environment_url: url,
 			production_environment: productionEnvironment,
-			// log_url: `https://dash.cloudflare.com/${accountId}/pages/view/${projectName}/${deploymentId}`,
+			log_url: ``,
 			description: "Cloudflare Pages",
 			state: "success",
 			auto_inactive: false,
