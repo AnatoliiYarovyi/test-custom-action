@@ -1,30 +1,19 @@
 import { getInput, setOutput, setFailed, summary } from "@actions/core";
 import type { Project, Deployment } from "@cloudflare/types";
 import { context, getOctokit } from "@actions/github";
-import shellac from "shellac";
 import { fetch } from "undici";
 import { env } from "process";
-import path from "node:path";
 
 type Octokit = ReturnType<typeof getOctokit>;
 
 try {
-	const apiToken = getInput("apiToken", { required: true });
-	const accountId = getInput("accountId", { required: true });
 	const projectName = getInput("projectName", { required: true });
 	const directory = getInput("directory", { required: true });
 	const gitHubToken = getInput("gitHubToken", { required: false });
 	const branch = getInput("branch", { required: false });
-	const workingDirectory = getInput("workingDirectory", { required: false });
-	const wranglerVersion = getInput("wranglerVersion", { required: false });
 
 	const getProject = async () => {
-		const response = await fetch(
-			`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${accountId}/${projectName}`,
-			{
-				headers: { token: apiToken },
-			},
-		);
+		const response = await fetch(`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${projectName}`);
 
 		if (!response.ok) {
 			throw new Error("Failed to fetch project data");
@@ -35,21 +24,8 @@ try {
 	};
 
 	const createPagesDeployment = async () => {
-		// TODO: Replace this with an API call to wrangler so we can get back a full deployment response object
-		await shellac.in(path.join(process.cwd(), workingDirectory))`
-    $ export CLOUDFLARE_API_TOKEN="${apiToken}"
-    if ${accountId} {
-      $ export CLOUDFLARE_ACCOUNT_ID="${accountId}"
-    }
-  
-    $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
-    `;
-
 		const response = await fetch(
-			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${accountId}/${projectName}`,
-			{
-				headers: { token: apiToken },
-			},
+			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch}`,
 		);
 
 		if (!response.ok) {
@@ -102,7 +78,7 @@ try {
 			environment: environmentName,
 			environment_url: url,
 			production_environment: productionEnvironment,
-			log_url: `https://dash.cloudflare.com/${accountId}/pages/view/${projectName}/${deploymentId}`,
+			// log_url: `https://dash.cloudflare.com/${accountId}/pages/view/${projectName}/${deploymentId}`,
 			description: "Cloudflare Pages",
 			state: "success",
 			auto_inactive: false,

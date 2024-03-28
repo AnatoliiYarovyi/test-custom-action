@@ -134,7 +134,7 @@ var require_command = __commonJS({
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, properties, message) {
-      const cmd = new Command3(command, properties, message);
+      const cmd = new Command(command, properties, message);
       process.stdout.write(cmd.toString() + os.EOL);
     }
     exports2.issueCommand = issueCommand;
@@ -143,7 +143,7 @@ var require_command = __commonJS({
     }
     exports2.issue = issue;
     var CMD_STRING = "::";
-    var Command3 = class {
+    var Command = class {
       constructor(command, properties, message) {
         if (!command) {
           command = "missing.command";
@@ -1237,14 +1237,14 @@ var require_util = __commonJS({
         }
         const port = url.port != null ? url.port : url.protocol === "https:" ? 443 : 80;
         let origin = url.origin != null ? url.origin : `${url.protocol}//${url.hostname}:${port}`;
-        let path3 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
+        let path = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
         if (origin.endsWith("/")) {
           origin = origin.substring(0, origin.length - 1);
         }
-        if (path3 && !path3.startsWith("/")) {
-          path3 = `/${path3}`;
+        if (path && !path.startsWith("/")) {
+          path = `/${path}`;
         }
-        url = new URL(origin + path3);
+        url = new URL(origin + path);
       }
       return url;
     }
@@ -2856,19 +2856,19 @@ var require_parseParams = __commonJS({
 var require_basename = __commonJS({
   "node_modules/@fastify/busboy/lib/utils/basename.js"(exports2, module2) {
     "use strict";
-    module2.exports = function basename(path3) {
-      if (typeof path3 !== "string") {
+    module2.exports = function basename(path) {
+      if (typeof path !== "string") {
         return "";
       }
-      for (var i = path3.length - 1; i >= 0; --i) {
-        switch (path3.charCodeAt(i)) {
+      for (var i = path.length - 1; i >= 0; --i) {
+        switch (path.charCodeAt(i)) {
           case 47:
           case 92:
-            path3 = path3.slice(i + 1);
-            return path3 === ".." || path3 === "." ? "" : path3;
+            path = path.slice(i + 1);
+            return path === ".." || path === "." ? "" : path;
         }
       }
-      return path3 === ".." || path3 === "." ? "" : path3;
+      return path === ".." || path === "." ? "" : path;
     };
   }
 });
@@ -5846,7 +5846,7 @@ var require_request = __commonJS({
     }
     var Request = class _Request {
       constructor(origin, {
-        path: path3,
+        path,
         method,
         body,
         headers,
@@ -5860,11 +5860,11 @@ var require_request = __commonJS({
         throwOnError,
         expectContinue
       }, handler) {
-        if (typeof path3 !== "string") {
+        if (typeof path !== "string") {
           throw new InvalidArgumentError("path must be a string");
-        } else if (path3[0] !== "/" && !(path3.startsWith("http://") || path3.startsWith("https://")) && method !== "CONNECT") {
+        } else if (path[0] !== "/" && !(path.startsWith("http://") || path.startsWith("https://")) && method !== "CONNECT") {
           throw new InvalidArgumentError("path must be an absolute URL or start with a slash");
-        } else if (invalidPathRegex.exec(path3) !== null) {
+        } else if (invalidPathRegex.exec(path) !== null) {
           throw new InvalidArgumentError("invalid request path");
         }
         if (typeof method !== "string") {
@@ -5927,7 +5927,7 @@ var require_request = __commonJS({
         this.completed = false;
         this.aborted = false;
         this.upgrade = upgrade || null;
-        this.path = query ? util.buildURL(path3, query) : path3;
+        this.path = query ? util.buildURL(path, query) : path;
         this.origin = origin;
         this.idempotent = idempotent == null ? method === "HEAD" || method === "GET" : idempotent;
         this.blocking = blocking == null ? false : blocking;
@@ -6944,9 +6944,9 @@ var require_RedirectHandler = __commonJS({
           return this.handler.onHeaders(statusCode, headers, resume, statusText);
         }
         const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
-        const path3 = search ? `${pathname}${search}` : pathname;
+        const path = search ? `${pathname}${search}` : pathname;
         this.opts.headers = cleanRequestHeaders(this.opts.headers, statusCode === 303, this.opts.origin !== origin);
-        this.opts.path = path3;
+        this.opts.path = path;
         this.opts.origin = origin;
         this.opts.maxRedirections = 0;
         this.opts.query = null;
@@ -7844,15 +7844,15 @@ var require_client = __commonJS({
         }
       }
     };
-    function onParserTimeout(parser2) {
-      const { socket, timeoutType, client } = parser2;
+    function onParserTimeout(parser) {
+      const { socket, timeoutType, client } = parser;
       if (timeoutType === TIMEOUT_HEADERS) {
         if (!socket[kWriting] || socket.writableNeedDrain || client[kRunning] > 1) {
-          assert(!parser2.paused, "cannot be paused while waiting for headers");
+          assert(!parser.paused, "cannot be paused while waiting for headers");
           util.destroy(socket, new HeadersTimeoutError());
         }
       } else if (timeoutType === TIMEOUT_BODY) {
-        if (!parser2.paused) {
+        if (!parser.paused) {
           util.destroy(socket, new BodyTimeoutError());
         }
       } else if (timeoutType === TIMEOUT_IDLE) {
@@ -7861,17 +7861,17 @@ var require_client = __commonJS({
       }
     }
     function onSocketReadable() {
-      const { [kParser]: parser2 } = this;
-      if (parser2) {
-        parser2.readMore();
+      const { [kParser]: parser } = this;
+      if (parser) {
+        parser.readMore();
       }
     }
     function onSocketError(err) {
-      const { [kClient]: client, [kParser]: parser2 } = this;
+      const { [kClient]: client, [kParser]: parser } = this;
       assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
       if (client[kHTTPConnVersion] !== "h2") {
-        if (err.code === "ECONNRESET" && parser2.statusCode && !parser2.shouldKeepAlive) {
-          parser2.onMessageComplete();
+        if (err.code === "ECONNRESET" && parser.statusCode && !parser.shouldKeepAlive) {
+          parser.onMessageComplete();
           return;
         }
       }
@@ -7890,20 +7890,20 @@ var require_client = __commonJS({
       }
     }
     function onSocketEnd() {
-      const { [kParser]: parser2, [kClient]: client } = this;
+      const { [kParser]: parser, [kClient]: client } = this;
       if (client[kHTTPConnVersion] !== "h2") {
-        if (parser2.statusCode && !parser2.shouldKeepAlive) {
-          parser2.onMessageComplete();
+        if (parser.statusCode && !parser.shouldKeepAlive) {
+          parser.onMessageComplete();
           return;
         }
       }
       util.destroy(this, new SocketError("other side closed", util.getSocketInfo(this)));
     }
     function onSocketClose() {
-      const { [kClient]: client, [kParser]: parser2 } = this;
-      if (client[kHTTPConnVersion] === "h1" && parser2) {
-        if (!this[kError] && parser2.statusCode && !parser2.shouldKeepAlive) {
-          parser2.onMessageComplete();
+      const { [kClient]: client, [kParser]: parser } = this;
+      if (client[kHTTPConnVersion] === "h1" && parser) {
+        if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) {
+          parser.onMessageComplete();
         }
         this[kParser].destroy();
         this[kParser] = null;
@@ -8176,7 +8176,7 @@ var require_client = __commonJS({
         writeH2(client, client[kHTTP2Session], request);
         return;
       }
-      const { body, method, path: path3, host, upgrade, headers, blocking, reset } = request;
+      const { body, method, path, host, upgrade, headers, blocking, reset } = request;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
         body.read(0);
@@ -8226,7 +8226,7 @@ var require_client = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      let header = `${method} ${path3} HTTP/1.1\r
+      let header = `${method} ${path} HTTP/1.1\r
 `;
       if (typeof host === "string") {
         header += `host: ${host}\r
@@ -8289,7 +8289,7 @@ upgrade: ${upgrade}\r
       return true;
     }
     function writeH2(client, session, request) {
-      const { body, method, path: path3, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
+      const { body, method, path, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
       let headers;
       if (typeof reqHeaders === "string")
         headers = Request[kHTTP2CopyHeaders](reqHeaders.trim());
@@ -8335,7 +8335,7 @@ upgrade: ${upgrade}\r
         });
         return true;
       }
-      headers[HTTP2_HEADER_PATH] = path3;
+      headers[HTTP2_HEADER_PATH] = path;
       headers[HTTP2_HEADER_SCHEME] = "https";
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
@@ -10568,20 +10568,20 @@ var require_mock_utils = __commonJS({
       }
       return true;
     }
-    function safeUrl(path3) {
-      if (typeof path3 !== "string") {
-        return path3;
+    function safeUrl(path) {
+      if (typeof path !== "string") {
+        return path;
       }
-      const pathSegments = path3.split("?");
+      const pathSegments = path.split("?");
       if (pathSegments.length !== 2) {
-        return path3;
+        return path;
       }
       const qp = new URLSearchParams(pathSegments.pop());
       qp.sort();
       return [...pathSegments, qp.toString()].join("?");
     }
-    function matchKey(mockDispatch2, { path: path3, method, body, headers }) {
-      const pathMatch = matchValue(mockDispatch2.path, path3);
+    function matchKey(mockDispatch2, { path, method, body, headers }) {
+      const pathMatch = matchValue(mockDispatch2.path, path);
       const methodMatch = matchValue(mockDispatch2.method, method);
       const bodyMatch = typeof mockDispatch2.body !== "undefined" ? matchValue(mockDispatch2.body, body) : true;
       const headersMatch = matchHeaders(mockDispatch2, headers);
@@ -10599,7 +10599,7 @@ var require_mock_utils = __commonJS({
     function getMockDispatch(mockDispatches, key) {
       const basePath = key.query ? buildURL(key.path, key.query) : key.path;
       const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
-      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path3 }) => matchValue(safeUrl(path3), resolvedPath));
+      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path }) => matchValue(safeUrl(path), resolvedPath));
       if (matchedMockDispatches.length === 0) {
         throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
       }
@@ -10636,9 +10636,9 @@ var require_mock_utils = __commonJS({
       }
     }
     function buildKey(opts) {
-      const { path: path3, method, body, headers, query } = opts;
+      const { path, method, body, headers, query } = opts;
       return {
-        path: path3,
+        path,
         method,
         body,
         headers,
@@ -11087,10 +11087,10 @@ var require_pending_interceptors_formatter = __commonJS({
       }
       format(pendingInterceptors) {
         const withPrettyHeaders = pendingInterceptors.map(
-          ({ method, path: path3, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
+          ({ method, path, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
             Method: method,
             Origin: origin,
-            Path: path3,
+            Path: path,
             "Status code": statusCode,
             Persistent: persist ? "\u2705" : "\u274C",
             Invocations: timesInvoked,
@@ -15725,8 +15725,8 @@ var require_util6 = __commonJS({
         }
       }
     }
-    function validateCookiePath(path3) {
-      for (const char of path3) {
+    function validateCookiePath(path) {
+      for (const char of path) {
         const code = char.charCodeAt(0);
         if (code < 33 || char === ";") {
           throw new Error("Invalid cookie path");
@@ -17277,12 +17277,12 @@ var require_websocket = __commonJS({
     _onConnectionEstablished = new WeakSet();
     onConnectionEstablished_fn = function(response) {
       this[kResponse] = response;
-      const parser2 = new ByteParser(this);
-      parser2.on("drain", function onParserDrain() {
+      const parser = new ByteParser(this);
+      parser.on("drain", function onParserDrain() {
         this.ws[kResponse].socket.resume();
       });
       response.socket.ws = this;
-      this[kByteParser] = parser2;
+      this[kByteParser] = parser;
       this[kReadyState] = states.OPEN;
       const extensions = response.headersList.get("sec-websocket-extensions");
       if (extensions !== null) {
@@ -17441,11 +17441,11 @@ var require_undici = __commonJS({
           if (typeof opts.path !== "string") {
             throw new InvalidArgumentError("invalid opts.path");
           }
-          let path3 = opts.path;
+          let path = opts.path;
           if (!opts.path.startsWith("/")) {
-            path3 = `/${path3}`;
+            path = `/${path}`;
           }
-          url = new URL(util.parseOrigin(url).origin + path3);
+          url = new URL(util.parseOrigin(url).origin + path);
         } else {
           if (!opts) {
             opts = typeof url === "object" ? url : {};
@@ -18421,12 +18421,12 @@ var require_summary = __commonJS({
        *
        * @returns {string} content wrapped in HTML element
        */
-      wrap(tag2, content, attrs = {}) {
+      wrap(tag, content, attrs = {}) {
         const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
         if (!content) {
-          return `<${tag2}${htmlAttrs}>`;
+          return `<${tag}${htmlAttrs}>`;
         }
-        return `<${tag2}${htmlAttrs}>${content}</${tag2}>`;
+        return `<${tag}${htmlAttrs}>${content}</${tag}>`;
       }
       /**
        * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
@@ -18521,9 +18521,9 @@ var require_summary = __commonJS({
        * @returns {Summary} summary instance
        */
       addList(items, ordered = false) {
-        const tag2 = ordered ? "ol" : "ul";
+        const tag = ordered ? "ol" : "ul";
         const listItems = items.map((item) => this.wrap("li", item)).join("");
-        const element = this.wrap(tag2, listItems);
+        const element = this.wrap(tag, listItems);
         return this.addRaw(element).addEOL();
       }
       /**
@@ -18540,9 +18540,9 @@ var require_summary = __commonJS({
               return this.wrap("td", cell);
             }
             const { header, data, colspan, rowspan } = cell;
-            const tag2 = header ? "th" : "td";
+            const tag = header ? "th" : "td";
             const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
-            return this.wrap(tag2, data, attrs);
+            return this.wrap(tag, data, attrs);
           }).join("");
           return this.wrap("tr", cells);
         }).join("");
@@ -18585,8 +18585,8 @@ var require_summary = __commonJS({
        * @returns {Summary} summary instance
        */
       addHeading(text, level) {
-        const tag2 = `h${level}`;
-        const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag2) ? tag2 : "h1";
+        const tag = `h${level}`;
+        const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
         const element = this.wrap(allowedTag, text);
         return this.addRaw(element).addEOL();
       }
@@ -18674,7 +18674,7 @@ var require_path_utils = __commonJS({
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.toPlatformPath = exports2.toWin32Path = exports2.toPosixPath = void 0;
-    var path3 = __importStar(require("path"));
+    var path = __importStar(require("path"));
     function toPosixPath(pth) {
       return pth.replace(/[\\]/g, "/");
     }
@@ -18684,7 +18684,7 @@ var require_path_utils = __commonJS({
     }
     exports2.toWin32Path = toWin32Path;
     function toPlatformPath(pth) {
-      return pth.replace(/[/\\]/g, path3.sep);
+      return pth.replace(/[/\\]/g, path.sep);
     }
     exports2.toPlatformPath = toPlatformPath;
   }
@@ -18755,7 +18755,7 @@ var require_core = __commonJS({
     var file_command_1 = require_file_command();
     var utils_1 = require_utils();
     var os = __importStar(require("os"));
-    var path3 = __importStar(require("path"));
+    var path = __importStar(require("path"));
     var oidc_utils_1 = require_oidc_utils();
     var ExitCode;
     (function(ExitCode2) {
@@ -18783,7 +18783,7 @@ var require_core = __commonJS({
       } else {
         command_1.issueCommand("add-path", {}, inputPath);
       }
-      process.env["PATH"] = `${inputPath}${path3.delimiter}${process.env["PATH"]}`;
+      process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
     }
     exports2.addPath = addPath;
     function getInput2(name, options) {
@@ -18938,8 +18938,8 @@ var require_context = __commonJS({
           if ((0, fs_1.existsSync)(process.env.GITHUB_EVENT_PATH)) {
             this.payload = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
           } else {
-            const path3 = process.env.GITHUB_EVENT_PATH;
-            process.stdout.write(`GITHUB_EVENT_PATH ${path3} does not exist${os_1.EOL}`);
+            const path = process.env.GITHUB_EVENT_PATH;
+            process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${os_1.EOL}`);
           }
         }
         this.eventName = process.env.GITHUB_EVENT_NAME;
@@ -19584,14 +19584,14 @@ var require_util8 = __commonJS({
         }
         const port = url.port != null ? url.port : url.protocol === "https:" ? 443 : 80;
         let origin = url.origin != null ? url.origin : `${url.protocol}//${url.hostname}:${port}`;
-        let path3 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
+        let path = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
         if (origin.endsWith("/")) {
           origin = origin.substring(0, origin.length - 1);
         }
-        if (path3 && !path3.startsWith("/")) {
-          path3 = `/${path3}`;
+        if (path && !path.startsWith("/")) {
+          path = `/${path}`;
         }
-        url = new URL(origin + path3);
+        url = new URL(origin + path);
       }
       return url;
     }
@@ -20001,39 +20001,39 @@ var require_diagnostics = __commonJS({
       });
       diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
         const {
-          request: { method, path: path3, origin }
+          request: { method, path, origin }
         } = evt;
-        debuglog("sending request to %s %s/%s", method, origin, path3);
+        debuglog("sending request to %s %s/%s", method, origin, path);
       });
       diagnosticsChannel.channel("undici:request:headers").subscribe((evt) => {
         const {
-          request: { method, path: path3, origin },
+          request: { method, path, origin },
           response: { statusCode }
         } = evt;
         debuglog(
           "received response to %s %s/%s - HTTP %d",
           method,
           origin,
-          path3,
+          path,
           statusCode
         );
       });
       diagnosticsChannel.channel("undici:request:trailers").subscribe((evt) => {
         const {
-          request: { method, path: path3, origin }
+          request: { method, path, origin }
         } = evt;
-        debuglog("trailers received from %s %s/%s", method, origin, path3);
+        debuglog("trailers received from %s %s/%s", method, origin, path);
       });
       diagnosticsChannel.channel("undici:request:error").subscribe((evt) => {
         const {
-          request: { method, path: path3, origin },
+          request: { method, path, origin },
           error
         } = evt;
         debuglog(
           "request to %s %s/%s errored - %s",
           method,
           origin,
-          path3,
+          path,
           error.message
         );
       });
@@ -20082,9 +20082,9 @@ var require_diagnostics = __commonJS({
         });
         diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
           const {
-            request: { method, path: path3, origin }
+            request: { method, path, origin }
           } = evt;
-          debuglog("sending request to %s %s/%s", method, origin, path3);
+          debuglog("sending request to %s %s/%s", method, origin, path);
         });
       }
       diagnosticsChannel.channel("undici:websocket:open").subscribe((evt) => {
@@ -20146,7 +20146,7 @@ var require_request3 = __commonJS({
     var kHandler = Symbol("handler");
     var Request = class {
       constructor(origin, {
-        path: path3,
+        path,
         method,
         body,
         headers,
@@ -20161,11 +20161,11 @@ var require_request3 = __commonJS({
         expectContinue,
         servername
       }, handler) {
-        if (typeof path3 !== "string") {
+        if (typeof path !== "string") {
           throw new InvalidArgumentError("path must be a string");
-        } else if (path3[0] !== "/" && !(path3.startsWith("http://") || path3.startsWith("https://")) && method !== "CONNECT") {
+        } else if (path[0] !== "/" && !(path.startsWith("http://") || path.startsWith("https://")) && method !== "CONNECT") {
           throw new InvalidArgumentError("path must be an absolute URL or start with a slash");
-        } else if (invalidPathRegex.exec(path3) !== null) {
+        } else if (invalidPathRegex.exec(path) !== null) {
           throw new InvalidArgumentError("invalid request path");
         }
         if (typeof method !== "string") {
@@ -20228,7 +20228,7 @@ var require_request3 = __commonJS({
         this.completed = false;
         this.aborted = false;
         this.upgrade = upgrade || null;
-        this.path = query ? buildURL(path3, query) : path3;
+        this.path = query ? buildURL(path, query) : path;
         this.origin = origin;
         this.idempotent = idempotent == null ? method === "HEAD" || method === "GET" : idempotent;
         this.blocking = blocking == null ? false : blocking;
@@ -24434,15 +24434,15 @@ var require_client_h1 = __commonJS({
         }
       }
     };
-    function onParserTimeout(parser2) {
-      const { socket, timeoutType, client } = parser2;
+    function onParserTimeout(parser) {
+      const { socket, timeoutType, client } = parser;
       if (timeoutType === TIMEOUT_HEADERS) {
         if (!socket[kWriting] || socket.writableNeedDrain || client[kRunning] > 1) {
-          assert(!parser2.paused, "cannot be paused while waiting for headers");
+          assert(!parser.paused, "cannot be paused while waiting for headers");
           util.destroy(socket, new HeadersTimeoutError());
         }
       } else if (timeoutType === TIMEOUT_BODY) {
-        if (!parser2.paused) {
+        if (!parser.paused) {
           util.destroy(socket, new BodyTimeoutError());
         }
       } else if (timeoutType === TIMEOUT_IDLE) {
@@ -24462,35 +24462,35 @@ var require_client_h1 = __commonJS({
       socket[kBlocking] = false;
       socket[kParser] = new Parser(client, socket, llhttpInstance);
       addListener(socket, "error", function(err) {
-        const parser2 = this[kParser];
+        const parser = this[kParser];
         assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
-        if (err.code === "ECONNRESET" && parser2.statusCode && !parser2.shouldKeepAlive) {
-          parser2.onMessageComplete();
+        if (err.code === "ECONNRESET" && parser.statusCode && !parser.shouldKeepAlive) {
+          parser.onMessageComplete();
           return;
         }
         this[kError] = err;
         this[kClient][kOnError](err);
       });
       addListener(socket, "readable", function() {
-        const parser2 = this[kParser];
-        if (parser2) {
-          parser2.readMore();
+        const parser = this[kParser];
+        if (parser) {
+          parser.readMore();
         }
       });
       addListener(socket, "end", function() {
-        const parser2 = this[kParser];
-        if (parser2.statusCode && !parser2.shouldKeepAlive) {
-          parser2.onMessageComplete();
+        const parser = this[kParser];
+        if (parser.statusCode && !parser.shouldKeepAlive) {
+          parser.onMessageComplete();
           return;
         }
         util.destroy(this, new SocketError("other side closed", util.getSocketInfo(this)));
       });
       addListener(socket, "close", function() {
         const client2 = this[kClient];
-        const parser2 = this[kParser];
-        if (parser2) {
-          if (!this[kError] && parser2.statusCode && !parser2.shouldKeepAlive) {
-            parser2.onMessageComplete();
+        const parser = this[kParser];
+        if (parser) {
+          if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) {
+            parser.onMessageComplete();
           }
           this[kParser].destroy();
           this[kParser] = null;
@@ -24594,7 +24594,7 @@ var require_client_h1 = __commonJS({
       return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE" && method !== "CONNECT";
     }
     function writeH1(client, request) {
-      const { method, path: path3, host, upgrade, blocking, reset } = request;
+      const { method, path, host, upgrade, blocking, reset } = request;
       let { body, headers, contentLength } = request;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (util.isFormDataLike(body)) {
@@ -24659,7 +24659,7 @@ var require_client_h1 = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      let header = `${method} ${path3} HTTP/1.1\r
+      let header = `${method} ${path} HTTP/1.1\r
 `;
       if (typeof host === "string") {
         header += `host: ${host}\r
@@ -25150,7 +25150,7 @@ var require_client_h2 = __commonJS({
     }
     function writeH2(client, request) {
       const session = client[kHTTP2Session];
-      const { body, method, path: path3, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
+      const { body, method, path, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
       if (upgrade) {
         errorRequest(client, request, new Error("Upgrade not supported for H2"));
         return false;
@@ -25215,7 +25215,7 @@ var require_client_h2 = __commonJS({
         });
         return true;
       }
-      headers[HTTP2_HEADER_PATH] = path3;
+      headers[HTTP2_HEADER_PATH] = path;
       headers[HTTP2_HEADER_SCHEME] = "https";
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
@@ -25527,9 +25527,9 @@ var require_redirect_handler = __commonJS({
           return this.handler.onHeaders(statusCode, headers, resume, statusText);
         }
         const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
-        const path3 = search ? `${pathname}${search}` : pathname;
+        const path = search ? `${pathname}${search}` : pathname;
         this.opts.headers = cleanRequestHeaders(this.opts.headers, statusCode === 303, this.opts.origin !== origin);
-        this.opts.path = path3;
+        this.opts.path = path;
         this.opts.origin = origin;
         this.opts.maxRedirections = 0;
         this.opts.query = null;
@@ -28392,20 +28392,20 @@ var require_mock_utils2 = __commonJS({
       }
       return true;
     }
-    function safeUrl(path3) {
-      if (typeof path3 !== "string") {
-        return path3;
+    function safeUrl(path) {
+      if (typeof path !== "string") {
+        return path;
       }
-      const pathSegments = path3.split("?");
+      const pathSegments = path.split("?");
       if (pathSegments.length !== 2) {
-        return path3;
+        return path;
       }
       const qp = new URLSearchParams(pathSegments.pop());
       qp.sort();
       return [...pathSegments, qp.toString()].join("?");
     }
-    function matchKey(mockDispatch2, { path: path3, method, body, headers }) {
-      const pathMatch = matchValue(mockDispatch2.path, path3);
+    function matchKey(mockDispatch2, { path, method, body, headers }) {
+      const pathMatch = matchValue(mockDispatch2.path, path);
       const methodMatch = matchValue(mockDispatch2.method, method);
       const bodyMatch = typeof mockDispatch2.body !== "undefined" ? matchValue(mockDispatch2.body, body) : true;
       const headersMatch = matchHeaders(mockDispatch2, headers);
@@ -28423,7 +28423,7 @@ var require_mock_utils2 = __commonJS({
     function getMockDispatch(mockDispatches, key) {
       const basePath = key.query ? buildURL(key.path, key.query) : key.path;
       const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
-      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path3 }) => matchValue(safeUrl(path3), resolvedPath));
+      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path }) => matchValue(safeUrl(path), resolvedPath));
       if (matchedMockDispatches.length === 0) {
         throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
       }
@@ -28461,9 +28461,9 @@ var require_mock_utils2 = __commonJS({
       }
     }
     function buildKey(opts) {
-      const { path: path3, method, body, headers, query } = opts;
+      const { path, method, body, headers, query } = opts;
       return {
-        path: path3,
+        path,
         method,
         body,
         headers,
@@ -28923,10 +28923,10 @@ var require_pending_interceptors_formatter2 = __commonJS({
       }
       format(pendingInterceptors) {
         const withPrettyHeaders = pendingInterceptors.map(
-          ({ method, path: path3, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
+          ({ method, path, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
             Method: method,
             Origin: origin,
-            Path: path3,
+            Path: path,
             "Status code": statusCode,
             Persistent: persist ? "\u2705" : "\u274C",
             Invocations: timesInvoked,
@@ -33387,9 +33387,9 @@ var require_util13 = __commonJS({
         }
       }
     }
-    function validateCookiePath(path3) {
-      for (let i = 0; i < path3.length; ++i) {
-        const code = path3.charCodeAt(i);
+    function validateCookiePath(path) {
+      for (let i = 0; i < path.length; ++i) {
+        const code = path.charCodeAt(i);
         if (code < 32 || // exclude CTLs (0-31)
         code === 127 || // DEL
         code === 59) {
@@ -34965,12 +34965,12 @@ var require_websocket2 = __commonJS({
     _onConnectionEstablished = new WeakSet();
     onConnectionEstablished_fn = function(response) {
       this[kResponse] = response;
-      const parser2 = new ByteParser(this);
-      parser2.on("drain", function onParserDrain() {
+      const parser = new ByteParser(this);
+      parser.on("drain", function onParserDrain() {
         this.ws[kResponse].socket.resume();
       });
       response.socket.ws = this;
-      this[kByteParser] = parser2;
+      this[kByteParser] = parser;
       this[kReadyState] = states.OPEN;
       const extensions = response.headersList.get("sec-websocket-extensions");
       if (extensions !== null) {
@@ -35105,8 +35105,8 @@ var require_eventsource_stream = __commonJS({
     var { Transform } = require("stream");
     var { isASCIINumber, isValidLastEventId } = require_util15();
     var BOM = [239, 187, 191];
-    var LF2 = 10;
-    var CR2 = 13;
+    var LF = 10;
+    var CR = 13;
     var COLON = 58;
     var SPACE = 32;
     var EventSourceStream = class extends Transform {
@@ -35204,7 +35204,7 @@ var require_eventsource_stream = __commonJS({
         while (this.pos < this.buffer.length) {
           if (this.eventEndCheck) {
             if (this.crlfCheck) {
-              if (this.buffer[this.pos] === LF2) {
+              if (this.buffer[this.pos] === LF) {
                 this.buffer = this.buffer.subarray(this.pos + 1);
                 this.pos = 0;
                 this.crlfCheck = false;
@@ -35212,8 +35212,8 @@ var require_eventsource_stream = __commonJS({
               }
               this.crlfCheck = false;
             }
-            if (this.buffer[this.pos] === LF2 || this.buffer[this.pos] === CR2) {
-              if (this.buffer[this.pos] === CR2) {
+            if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
+              if (this.buffer[this.pos] === CR) {
                 this.crlfCheck = true;
               }
               this.buffer = this.buffer.subarray(this.pos + 1);
@@ -35227,8 +35227,8 @@ var require_eventsource_stream = __commonJS({
             this.eventEndCheck = false;
             continue;
           }
-          if (this.buffer[this.pos] === LF2 || this.buffer[this.pos] === CR2) {
-            if (this.buffer[this.pos] === CR2) {
+          if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
+            if (this.buffer[this.pos] === CR) {
               this.crlfCheck = true;
             }
             this.parseLine(this.buffer.subarray(0, this.pos), this.event);
@@ -35700,11 +35700,11 @@ var require_undici2 = __commonJS({
           if (typeof opts.path !== "string") {
             throw new InvalidArgumentError("invalid opts.path");
           }
-          let path3 = opts.path;
+          let path = opts.path;
           if (!opts.path.startsWith("/")) {
-            path3 = `/${path3}`;
+            path = `/${path}`;
           }
-          url = new URL(util.parseOrigin(url).origin + path3);
+          url = new URL(util.parseOrigin(url).origin + path);
         } else {
           if (!opts) {
             opts = typeof url === "object" ? url : {};
@@ -36041,23 +36041,23 @@ var require_before_after_hook = __commonJS({
 var require_dist_node2 = __commonJS({
   "node_modules/@octokit/endpoint/dist-node/index.js"(exports2, module2) {
     "use strict";
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       endpoint: () => endpoint
@@ -36303,7 +36303,7 @@ var require_dist_node2 = __commonJS({
         return template.replace(/\/$/, "");
       }
     }
-    function parse3(options) {
+    function parse2(options) {
       let method = options.method.toUpperCase();
       let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
       let headers = Object.assign({}, options.headers);
@@ -36367,7 +36367,7 @@ var require_dist_node2 = __commonJS({
       );
     }
     function endpointWithDefaults(defaults, route, options) {
-      return parse3(merge(defaults, route, options));
+      return parse2(merge(defaults, route, options));
     }
     function withDefaults(oldDefaults, newDefaults) {
       const DEFAULTS2 = merge(oldDefaults, newDefaults);
@@ -36376,7 +36376,7 @@ var require_dist_node2 = __commonJS({
         DEFAULTS: DEFAULTS2,
         defaults: withDefaults.bind(null, DEFAULTS2),
         merge: merge.bind(null, DEFAULTS2),
-        parse: parse3
+        parse: parse2
       });
     }
     var endpoint = withDefaults(null, DEFAULTS);
@@ -36482,20 +36482,20 @@ var require_dist_node4 = __commonJS({
   "node_modules/@octokit/request-error/dist-node/index.js"(exports2, module2) {
     "use strict";
     var __create2 = Object.create;
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __getProtoOf2 = Object.getPrototypeOf;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
@@ -36504,10 +36504,10 @@ var require_dist_node4 = __commonJS({
       // file that has been converted to a CommonJS file using a Babel-
       // compatible transform (i.e. "__esModule" has not been set), then set
       // "default" to the CommonJS "module.exports" for node compatibility.
-      isNodeMode || !mod || !mod.__esModule ? __defProp3(target, "default", { value: mod, enumerable: true }) : target,
+      isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
       mod
     ));
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       RequestError: () => RequestError
@@ -36573,23 +36573,23 @@ var require_dist_node4 = __commonJS({
 var require_dist_node5 = __commonJS({
   "node_modules/@octokit/request/dist-node/index.js"(exports2, module2) {
     "use strict";
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       request: () => request
@@ -36782,23 +36782,23 @@ var require_dist_node5 = __commonJS({
 var require_dist_node6 = __commonJS({
   "node_modules/@octokit/graphql/dist-node/index.js"(exports2, module2) {
     "use strict";
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       GraphqlResponseError: () => GraphqlResponseError,
@@ -36920,23 +36920,23 @@ var require_dist_node6 = __commonJS({
 var require_dist_node7 = __commonJS({
   "node_modules/@octokit/auth-token/dist-node/index.js"(exports2, module2) {
     "use strict";
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       createTokenAuth: () => createTokenAuth
@@ -36991,23 +36991,23 @@ var require_dist_node7 = __commonJS({
 var require_dist_node8 = __commonJS({
   "node_modules/@octokit/core/dist-node/index.js"(exports2, module2) {
     "use strict";
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       Octokit: () => Octokit
@@ -37143,23 +37143,23 @@ var require_dist_node8 = __commonJS({
 var require_dist_node9 = __commonJS({
   "node_modules/@octokit/plugin-rest-endpoint-methods/dist-node/index.js"(exports2, module2) {
     "use strict";
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       legacyRestEndpointMethods: () => legacyRestEndpointMethods,
@@ -39299,23 +39299,23 @@ var require_dist_node9 = __commonJS({
 var require_dist_node10 = __commonJS({
   "node_modules/@octokit/plugin-paginate-rest/dist-node/index.js"(exports2, module2) {
     "use strict";
-    var __defProp3 = Object.defineProperty;
+    var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
     var __export2 = (target, all) => {
       for (var name in all)
-        __defProp3(target, name, { get: all[name], enumerable: true });
+        __defProp2(target, name, { get: all[name], enumerable: true });
     };
     var __copyProps2 = (to, from, except, desc) => {
       if (from && typeof from === "object" || typeof from === "function") {
         for (let key of __getOwnPropNames2(from))
           if (!__hasOwnProp2.call(to, key) && key !== except)
-            __defProp3(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp3({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       composePaginateRest: () => composePaginateRest,
@@ -39791,1052 +39791,15 @@ var require_github = __commonJS({
 // src/index.ts
 var import_core = __toESM(require_core());
 var import_github = __toESM(require_github());
-
-// node_modules/shellac/dist/index.js
-var import_child_process = __toESM(require("child_process"), 1);
-var import_path = __toESM(require("path"), 1);
-
-// node_modules/reghex/dist/reghex-core.mjs
-var isStickySupported = typeof /./g.sticky === "boolean";
-var _pattern = function(input) {
-  if (typeof input === "function") {
-    return input;
-  }
-  var source = typeof input !== "string" ? input.source : input;
-  return isStickySupported ? new RegExp(source, "y") : new RegExp("^(?:" + source + ")", "g");
-};
-var _substr = function(state, pattern) {
-  var end = state.index + pattern.length;
-  var sub = state.input.slice(state.index, end);
-  if (sub === pattern) {
-    state.index = end;
-    return sub;
-  }
-};
-var _exec = function(state, pattern) {
-  if (typeof pattern === "function") {
-    return pattern();
-  }
-  var match;
-  if (isStickySupported) {
-    pattern.lastIndex = state.index;
-    match = pattern.exec(state.input);
-    state.index = pattern.lastIndex;
-  } else {
-    pattern.lastIndex = 0;
-    match = pattern.exec(state.input.slice(state.input));
-    state.index += pattern.lastIndex;
-  }
-  return match && match[0];
-};
-var tag = function(array, tag2) {
-  array.tag = tag2;
-  return array;
-};
-var parse2 = function(pattern) {
-  return function(input) {
-    var state = {
-      input,
-      index: 0
-    };
-    return pattern(state);
-  };
-};
-
-// node_modules/shellac/dist/index.js
-var __defProp2 = Object.defineProperty;
-var __defNormalProp2 = (obj, key, value) => key in obj ? __defProp2(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __publicField2 = (obj, key, value) => {
-  __defNormalProp2(obj, typeof key !== "symbol" ? key + "" : key, value);
-  return value;
-};
-var Shell = class {
-  constructor(overrides) {
-    __publicField(this, "process");
-    const env2 = {
-      ...{ PS1: "", PATH: process.env.PATH },
-      ...overrides
-    };
-    this.process = import_child_process.default.spawn("bash", ["--noprofile", "--norc"], {
-      env: env2,
-      detached: true
-    });
-    this.process.stdout.setEncoding("utf8");
-  }
-  getStdin() {
-    return this.process.stdin;
-  }
-  getStdout() {
-    return this.process.stdout;
-  }
-  getStderr() {
-    return this.process.stderr;
-  }
-  exit() {
-    this.process.kill("SIGINT");
-  }
-};
-__publicField2(Shell, "logger", (...args) => process.stdout.write(args.map((a) => a.toString()).join("\n")));
-var LF = "\n";
-var CR = "\r";
-var trimFinalNewline = (input) => {
-  if (input[input.length - 1] === LF) {
-    input = input.slice(0, input.length - 1);
-  }
-  if (input[input.length - 1] === CR) {
-    input = input.slice(0, input.length - 1);
-  }
-  return input;
-};
-var parseJSON = (input) => {
-  if (!input)
-    throw new Error(`Attempting to parse JSON, got empty stdout.`);
-  try {
-    return JSON.parse(input);
-  } catch (e) {
-    throw new Error(`Failed to parse stdout as JSON, got: ${input}`);
-  }
-};
-var Command = class {
-  constructor({
-    cwd,
-    shell,
-    cmd,
-    interactive,
-    pipe_logs = false,
-    exit_expected = false
-  }) {
-    __publicField(this, "shell");
-    __publicField(this, "cmd");
-    __publicField(this, "cwd");
-    __publicField(this, "interactive");
-    __publicField(this, "exec");
-    __publicField(this, "runningState");
-    __publicField(this, "pipe_logs");
-    __publicField(this, "exit_expected");
-    __publicField(this, "retCode");
-    __publicField(this, "promiseResolve");
-    __publicField(this, "promiseReject");
-    __publicField(this, "promise");
-    __publicField(this, "timer");
-    __publicField(this, "stdout");
-    __publicField(this, "stderr");
-    __publicField(this, "handleStdoutData", (data) => {
-      const lines = trimFinalNewline(data).split(/\r?\n/);
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const match = line.match(/__END_OF_COMMAND_\[(\d+)\]__/);
-        if (match) {
-          this.retCode = parseInt(match[1]);
-          setImmediate(this.finish);
-          return;
-        } else {
-          if (this.pipe_logs)
-            process.stdout.write(line + "\n");
-          this.stdout += line + "\n";
-        }
-        if (this.interactive) {
-          this.interactive(line, this.handleStdinData);
-        }
-      }
-    });
-    __publicField(this, "handleStderrData", (data) => {
-      if (this.pipe_logs)
-        process.stderr.write(data);
-      this.stderr += data;
-    });
-    __publicField(this, "handleStdinData", (data) => {
-      this.shell.getStdin().write(`${data}
-`);
-    });
-    __publicField(this, "run", () => {
-      let promiseResolve, promiseReject;
-      const promise = new Promise((resolve, reject) => {
-        promiseResolve = resolve;
-        promiseReject = reject;
-      });
-      this.promiseResolve = promiseResolve;
-      this.promiseReject = promiseReject;
-      this.promise = promise;
-      this.runningState = 1;
-      this.shell.getStdin().write(this.exec);
-      this.timer = setTimeout(() => {
-        if (this.runningState !== 2) {
-          const obj = {
-            retCode: -1,
-            cmd: this.cmd,
-            stdout: this.stdout,
-            stderr: this.stderr
-          };
-          this.promiseReject(obj);
-        }
-      }, 864e5);
-      return promise.then(() => this, (e) => {
-        this.log(`
-
-SHELLAC COMMAND FAILED!
-Executing: ${this.cmd} in ${this.cwd}
-
-STDOUT:
-
-`);
-        this.log(`${this.stdout}
-
-`);
-        this.log(`STDERR:
-
-${this.stderr}
-
-`);
-        this.shell.exit();
-        throw e;
-      });
-    });
-    __publicField(this, "finish", () => {
-      this.runningState = 2;
-      clearTimeout(this.timer);
-      this.shell.getStdout().removeListener("data", this.handleStdoutData);
-      this.shell.getStderr().removeListener("data", this.handleStderrData);
-      const obj = {
-        retCode: this.retCode,
-        cmd: this.cmd,
-        stdout: this.stdout,
-        stderr: this.stderr
-      };
-      const matching_exit_code = this.retCode === this.exit_expected;
-      if (!matching_exit_code) {
-        if (this.exit_expected === true) {
-          if (this.retCode === 0) {
-            this.log("NO EXIT WHEN EXPECTED");
-            return this.promiseReject(obj);
-          }
-        } else if (this.exit_expected === false) {
-          if (this.retCode !== 0) {
-            this.log("EXIT WHEN NOT EXPECTED");
-            return this.promiseReject(obj);
-          }
-        } else {
-          this.log(`EXIT CODE DIDN'T MATCH`);
-          return this.promiseReject(obj);
-        }
-      }
-      return this.promiseResolve(obj);
-    });
-    __publicField(this, "log", Shell.logger);
-    this.shell = shell;
-    this.cmd = cmd;
-    this.cwd = cwd;
-    this.interactive = interactive;
-    this.exit_expected = exit_expected;
-    this.exec = `cd "${cwd}" && 
-${this.cmd};echo __END_OF_COMMAND_[$?]__
-`;
-    this.shell.process.on("exit", this.finish);
-    this.shell.getStdout().on("data", this.handleStdoutData);
-    this.shell.getStderr().on("data", this.handleStderrData);
-    this.runningState = 0;
-    this.pipe_logs = pipe_logs;
-    this.stdout = "";
-    this.stderr = "";
-  }
-};
-async function IfStatement(chunk, context2) {
-  const { interps, last_cmd } = context2;
-  const [[val_type, val_id], if_clause, else_clause] = chunk;
-  if (val_type !== "VALUE")
-    throw new Error("If statements only accept value interpolations, not functions.");
-  if (interps[val_id]) {
-    return execute(if_clause, context2);
-  } else if (else_clause) {
-    return execute(else_clause, context2);
-  } else {
-    return last_cmd;
-  }
-}
-async function Command2(chunk, context2) {
-  const { interps, cwd, shell, exit_expected, env: env2 } = context2;
-  const [str] = chunk;
-  const split_cmd = str.split(/#__(?:FUNCTION|VALUE)_(\d+)__#/g);
-  let cmd = "";
-  let i = 0;
-  for (const token of split_cmd) {
-    if (i++ % 2 === 0) {
-      cmd += token;
-    } else {
-      const interp = interps[token];
-      cmd += await (typeof interp === "function" ? interp() : interp);
-    }
-  }
-  const command = new Command({
-    cwd,
-    shell,
-    cmd,
-    pipe_logs: chunk.tag === "logged_command",
-    exit_expected
-  });
-  return command.run();
-}
-async function InStatement(chunk, context2) {
-  const { interps } = context2;
-  const [arg, in_clause] = chunk;
-  if (typeof arg === "string") {
-    throw new Error("IN statements need an argument token.");
-  }
-  let new_cwd;
-  if (arg.tag === "identifier") {
-    const [val_type, val_id] = arg;
-    if (val_type !== "VALUE")
-      throw new Error("IN statements only accept value interpolations, not functions.");
-    new_cwd = interps[val_id];
-  } else if (arg.tag === "string_arg") {
-    new_cwd = arg[0].replace(/^"|"$/g, "");
-  } else {
-    throw new Error(`Unknown argument token for IN statement: ${arg.tag}`);
-  }
-  if (!new_cwd || typeof new_cwd !== "string")
-    throw new Error(`IN statements need a string value to set as the current working dir`);
-  return execute(in_clause, {
-    ...context2,
-    cwd: import_path.default.resolve(context2.cwd, new_cwd)
-  });
-}
-async function Grammar(chunk, context2) {
-  const { last_cmd } = context2;
-  let new_last_cmd = last_cmd;
-  for (const sub of chunk) {
-    new_last_cmd = await execute(sub, {
-      ...context2,
-      last_cmd: new_last_cmd
-    });
-  }
-  return new_last_cmd;
-}
-async function Await(chunk, context2) {
-  const { interps, last_cmd } = context2;
-  const [[val_type, val_id]] = chunk;
-  if (val_type !== "FUNCTION")
-    throw new Error("IN statements only accept function interpolations, not values.");
-  await interps[val_id]();
-  return last_cmd;
-}
-async function Stdout(chunk, context2) {
-  const { interps, last_cmd, captures } = context2;
-  const [out_or_err, second] = chunk;
-  const is_json = out_or_err === "json";
-  if (!(out_or_err === "stdout" || out_or_err === "stderr" || is_json))
-    throw new Error(`Expected only 'stdout', 'stderr' or 'json', got: ${out_or_err}`);
-  const capture = is_json ? parseJSON(last_cmd == null ? void 0 : last_cmd.stdout) : trimFinalNewline((last_cmd == null ? void 0 : last_cmd[out_or_err]) || "");
-  const tag2 = second.tag;
-  if (tag2 === "identifier") {
-    const [val_type, val_id] = second;
-    if (val_type !== "FUNCTION")
-      throw new Error("STDOUT/STDERR statements only accept function interpolations, not values.");
-    await interps[val_id](capture);
-  } else if (tag2 === "variable_name") {
-    captures[second[0]] = capture;
-  } else {
-    throw new Error("STDOUT/STDERR statements expect a variable name or an interpolation function.");
-  }
-  return last_cmd;
-}
-async function Exitcode(chunk, context2) {
-  const { interps, last_cmd } = context2;
-  const [exitcode, second] = chunk;
-  if (exitcode !== "exitcode")
-    throw new Error(`Expected only 'exitcode', got: ${exitcode}`);
-  const capture = (last_cmd == null ? void 0 : last_cmd.retCode) || 0;
-  const tag2 = second.tag;
-  if (tag2 === "identifier") {
-    const [val_type, val_id] = second;
-    if (val_type !== "FUNCTION")
-      throw new Error("exitcode statements only accept function interpolations, not values.");
-    await interps[val_id](capture);
-  } else {
-    throw new Error("exitcode statements expect an interpolation function.");
-  }
-  return last_cmd;
-}
-async function ExitsStatement(chunk, context2) {
-  const [exit_expected, block] = chunk.length > 1 ? [Number(chunk[0][0]), chunk[1]] : [true, chunk[0]];
-  return execute(block, {
-    ...context2,
-    exit_expected
-  });
-}
-var execute = async (chunk, context2) => {
-  if (Array.isArray(chunk)) {
-    if (chunk.tag === "command_line" || chunk.tag === "logged_command") {
-      return Command2(chunk, context2);
-    } else if (chunk.tag === "if_statement") {
-      return IfStatement(chunk, context2);
-    } else if (chunk.tag === "in_statement") {
-      return InStatement(chunk, context2);
-    } else if (chunk.tag === "grammar") {
-      return await Grammar(chunk, context2);
-    } else if (chunk.tag === "await_statement") {
-      return await Await(chunk, context2);
-    } else if (chunk.tag === "stdout_statement") {
-      return await Stdout(chunk, context2);
-    } else if (chunk.tag === "exitcode_statement") {
-      return await Exitcode(chunk, context2);
-    } else if (chunk.tag === "exits_statement") {
-      return await ExitsStatement(chunk, context2);
-    } else {
-      return context2.last_cmd;
-    }
-  }
-  return null;
-};
-var _ignored_expression = _pattern(/([\s,]|#[^\n\r]+)+/);
-var ignored = function _ignored(state) {
-  var last_index = state.index;
-  var match, node = [];
-  if (match = _exec(state, _ignored_expression)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "ignored");
-};
-var _comment_line_expression = _pattern(/\/\/\s+/);
-var _comment_line_expression2 = _pattern(/[^\n\r]*/);
-var comment_line = function _comment_line(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_exec(state, _comment_line_expression)) {
-    state.index = last_index;
-    return;
-  }
-  if (match = _exec(state, _comment_line_expression2)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  return tag(node, "comment_line");
-};
-var _command_line_expression = _pattern(/\$\s+/);
-var _command_line_expression2 = _pattern(/.*/);
-var command_line = function _command_line(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_exec(state, _command_line_expression)) {
-    state.index = last_index;
-    return;
-  }
-  if (match = _exec(state, _command_line_expression2)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "command_line");
-};
-var _logged_command_expression = _pattern(/\$\$\s+/);
-var _logged_command_expression2 = _pattern(/.*/);
-var logged_command = function _logged_command(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_exec(state, _logged_command_expression)) {
-    state.index = last_index;
-    return;
-  }
-  if (match = _exec(state, _logged_command_expression2)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "logged_command");
-};
-var _identifier_expression = _pattern(/VALUE|FUNCTION/);
-var _identifier_expression2 = _pattern(/\d+/);
-var identifier = function _identifier(state) {
-  var last_index = state.index;
-  var match, node = [];
-  if (!_substr(state, "#__")) {
-    state.index = last_index;
-    return;
-  }
-  if (match = _exec(state, _identifier_expression)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  if (!_substr(state, "_")) {
-    state.index = last_index;
-    return;
-  }
-  if (match = _exec(state, _identifier_expression2)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  if (!_substr(state, "__#")) {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "identifier");
-};
-var _integer_argument_expression = _pattern(/\d+/);
-var integer_argument = function _integer_argument(state) {
-  var last_index = state.index;
-  var match, node = [];
-  if (!_substr(state, "(")) {
-    state.index = last_index;
-    return;
-  }
-  if (match = _exec(state, _integer_argument_expression)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  if (!_substr(state, ")")) {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "integer_argument");
-};
-var _variable_name_expression = _pattern(/\S+/);
-var variable_name = function _variable_name(state) {
-  var last_index = state.index;
-  var match, node = [];
-  if (match = _exec(state, _variable_name_expression)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "variable_name");
-};
-var _string_arg_expression = _pattern(/"[^"]*"/);
-var _string_arg_expression2 = _pattern(/\S+/);
-var string_arg = function _string_arg(state) {
-  var last_index = state.index;
-  var match, node = [];
-  block_0: {
-    var index_0 = state.index;
-    if (match = _exec(state, _string_arg_expression)) {
-      node.push(match);
-    } else {
-      state.index = index_0;
-      break block_0;
-    }
-    return tag(node, "string_arg");
-  }
-  if (match = _exec(state, _string_arg_expression2)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "string_arg");
-};
-var _if_statement_expression = _pattern(/if\s+/);
-var if_statement = function _if_statement(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_exec(state, _if_statement_expression)) {
-    state.index = last_index;
-    return;
-  }
-  if (match = identifier(state)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_substr(state, "{")) {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (match = grammar(state)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_substr(state, "}")) {
-    state.index = last_index;
-    return;
-  }
-  var index_0 = state.index;
-  var length_0 = node.length;
-  var index_2 = state.index;
-  if (!ignored(state)) {
-    state.index = index_2;
-  }
-  if (!_substr(state, "else")) {
-    state.index = index_0;
-  }
-  var index_2 = state.index;
-  if (!ignored(state)) {
-    state.index = index_2;
-  }
-  if (!_substr(state, "{")) {
-    state.index = index_0;
-  }
-  var index_2 = state.index;
-  if (!ignored(state)) {
-    state.index = index_2;
-  }
-  if (match = grammar(state)) {
-    node.push(match);
-  } else {
-    state.index = index_0;
-  }
-  var index_2 = state.index;
-  if (!ignored(state)) {
-    state.index = index_2;
-  }
-  if (!_substr(state, "}")) {
-    state.index = index_0;
-  }
-  return tag(node, "if_statement");
-};
-var _in_statement_expression = _pattern(/in\s+/);
-var in_statement = function _in_statement(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_exec(state, _in_statement_expression)) {
-    state.index = last_index;
-    return;
-  }
-  var length_0 = node.length;
-  alternation_1: {
-    block_1: {
-      var index_1 = state.index;
-      if (match = identifier(state)) {
-        node.push(match);
-      } else {
-        node.length = length_0;
-        state.index = index_1;
-        break block_1;
-      }
-      break alternation_1;
-    }
-    if (match = string_arg(state)) {
-      node.push(match);
-    } else {
-      node.length = length_0;
-      state.index = last_index;
-      return;
-    }
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_substr(state, "{")) {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (match = grammar(state)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_substr(state, "}")) {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "in_statement");
-};
-var _await_statement_expression = _pattern(/await\s+/);
-var await_statement = function _await_statement(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_exec(state, _await_statement_expression)) {
-    state.index = last_index;
-    return;
-  }
-  if (match = identifier(state)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  return tag(node, "await_statement");
-};
-var _stdout_statement_expression = _pattern(/std(out|err)|json/);
-var _stdout_statement_expression2 = _pattern(/\s+>>\s+/);
-var stdout_statement = function _stdout_statement(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (match = _exec(state, _stdout_statement_expression)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  if (!_exec(state, _stdout_statement_expression2)) {
-    state.index = last_index;
-    return;
-  }
-  var length_0 = node.length;
-  alternation_1: {
-    block_1: {
-      var index_1 = state.index;
-      if (match = identifier(state)) {
-        node.push(match);
-      } else {
-        node.length = length_0;
-        state.index = index_1;
-        break block_1;
-      }
-      break alternation_1;
-    }
-    if (match = variable_name(state)) {
-      node.push(match);
-    } else {
-      node.length = length_0;
-      state.index = last_index;
-      return;
-    }
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  return tag(node, "stdout_statement");
-};
-var _exitcode_statement_expression = _pattern(/\s+>>\s+/);
-var exitcode_statement = function _exitcode_statement(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (match = _substr(state, "exitcode")) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  if (!_exec(state, _exitcode_statement_expression)) {
-    state.index = last_index;
-    return;
-  }
-  var length_0 = node.length;
-  if (match = identifier(state)) {
-    node.push(match);
-  } else {
-    node.length = length_0;
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  return tag(node, "exitcode_statement");
-};
-var exits_statement = function _exits_statement(state) {
-  var last_index = state.index;
-  var match, node = [];
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_substr(state, "exits")) {
-    state.index = last_index;
-    return;
-  }
-  var index_0 = state.index;
-  var length_0 = node.length;
-  if (match = integer_argument(state)) {
-    node.push(match);
-  } else {
-    state.index = index_0;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_substr(state, "{")) {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (match = grammar(state)) {
-    node.push(match);
-  } else {
-    state.index = last_index;
-    return;
-  }
-  var index_1 = state.index;
-  if (!ignored(state)) {
-    state.index = index_1;
-  }
-  if (!_substr(state, "}")) {
-    state.index = last_index;
-    return;
-  }
-  return tag(node, "exits_statement");
-};
-var grammar = function _grammar(state) {
-  var last_index = state.index;
-  var match, node = [];
-  loop_0:
-    for (var iter_0 = 0; true; iter_0++) {
-      var index_0 = state.index;
-      var length_0 = node.length;
-      alternation_1: {
-        block_1: {
-          var index_1 = state.index;
-          if (!ignored(state)) {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = comment_line(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = command_line(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = logged_command(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = if_statement(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = in_statement(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = await_statement(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = stdout_statement(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        block_1: {
-          var index_1 = state.index;
-          if (match = exitcode_statement(state)) {
-            node.push(match);
-          } else {
-            node.length = length_0;
-            state.index = index_1;
-            break block_1;
-          }
-          break alternation_1;
-        }
-        if (match = exits_statement(state)) {
-          node.push(match);
-        } else {
-          if (iter_0) {
-            state.index = index_0;
-            break loop_0;
-          }
-          node.length = length_0;
-          state.index = last_index;
-          return;
-        }
-      }
-    }
-  return tag(node, "grammar");
-};
-var grammar_default = parse2(grammar);
-var parser = (str) => grammar_default(str.trim());
-var lazyCreateShell = async (env2) => new Shell(env2);
-var _shellac = (cwd, lazyShell, env2) => async (s, ...interps) => {
-  let str = s[0];
-  for (let i = 0; i < interps.length; i++) {
-    const is_fn = typeof interps[i] === "function";
-    const interp_placeholder = `#__${is_fn ? "FUNCTION_" : "VALUE_"}${i}__#`;
-    str += interp_placeholder + s[i + 1];
-  }
-  if (str.length === 0)
-    throw new Error("Must provide statements");
-  const parsed = parser(str);
-  if (!parsed || typeof parsed === "string")
-    throw new Error("Parsing error!");
-  const captures = {};
-  const shell = await lazyShell(env2);
-  const last_cmd = await execute(parsed, {
-    interps,
-    last_cmd: null,
-    cwd,
-    captures,
-    shell,
-    exit_expected: false,
-    env: env2
-  });
-  shell.exit();
-  return {
-    stdout: trimFinalNewline((last_cmd == null ? void 0 : last_cmd.stdout) || ""),
-    stderr: trimFinalNewline((last_cmd == null ? void 0 : last_cmd.stderr) || ""),
-    ...captures
-  };
-};
-var bgShellac = (cwd, lazyShell, env2) => async (s, ...interps) => {
-  const shell = await lazyShell(env2);
-  return {
-    process: shell.process,
-    pid: shell.process.pid,
-    promise: _shellac(process.cwd(), async () => shell, env2)(s, ...interps),
-    kill: () => shell.exit()
-  };
-};
-function makeShellac(cwd = process.cwd(), env2 = {}, shell = lazyCreateShell) {
-  return Object.defineProperties(_shellac(cwd, lazyCreateShell, env2), {
-    in: { value: (dir) => makeShellac(dir, env2, shell) },
-    bg: {
-      get() {
-        return bgShellac(cwd, shell, env2);
-      }
-    },
-    env: {
-      value: (newEnv) => makeShellac(cwd, { ...env2, ...newEnv }, shell)
-    }
-  });
-}
-var shellac = makeShellac();
-var src_default = shellac;
-
-// src/index.ts
 var import_undici = __toESM(require_undici2());
 var import_process = require("process");
-var import_node_path = __toESM(require("path"));
 try {
-  const apiToken = (0, import_core.getInput)("apiToken", { required: true });
-  const accountId = (0, import_core.getInput)("accountId", { required: true });
   const projectName = (0, import_core.getInput)("projectName", { required: true });
   const directory = (0, import_core.getInput)("directory", { required: true });
   const gitHubToken = (0, import_core.getInput)("gitHubToken", { required: false });
   const branch = (0, import_core.getInput)("branch", { required: false });
-  const workingDirectory = (0, import_core.getInput)("workingDirectory", { required: false });
-  const wranglerVersion = (0, import_core.getInput)("wranglerVersion", { required: false });
   const getProject = async () => {
-    const response = await (0, import_undici.fetch)(
-      `https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${accountId}/${projectName}`,
-      {
-        headers: { token: apiToken }
-      }
-    );
+    const response = await (0, import_undici.fetch)(`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${projectName}`);
     if (!response.ok) {
       throw new Error("Failed to fetch project data");
     }
@@ -40844,19 +39807,8 @@ try {
     return projectData;
   };
   const createPagesDeployment = async () => {
-    await src_default.in(import_node_path.default.join(process.cwd(), workingDirectory))`
-    $ export CLOUDFLARE_API_TOKEN="${apiToken}"
-    if ${accountId} {
-      $ export CLOUDFLARE_ACCOUNT_ID="${accountId}"
-    }
-  
-    $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
-    `;
     const response = await (0, import_undici.fetch)(
-      `https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${accountId}/${projectName}`,
-      {
-        headers: { token: apiToken }
-      }
+      `https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch}`
     );
     if (!response.ok) {
       throw new Error("Failed to fetch deployment data");
@@ -40896,7 +39848,7 @@ try {
       environment: environmentName,
       environment_url: url,
       production_environment: productionEnvironment,
-      log_url: `https://dash.cloudflare.com/${accountId}/pages/view/${projectName}/${deploymentId}`,
+      // log_url: `https://dash.cloudflare.com/${accountId}/pages/view/${projectName}/${deploymentId}`,
       description: "Cloudflare Pages",
       state: "success",
       auto_inactive: false
