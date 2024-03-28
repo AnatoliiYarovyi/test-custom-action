@@ -11,14 +11,11 @@ try {
 	const directory = getInput("directory", { required: true });
 	const gitHubToken = getInput("gitHubToken", { required: false });
 	const branch = getInput("branch", { required: false });
+	const workingDirectory = getInput("workingDirectory", { required: false });
+	const wranglerVersion = getInput("wranglerVersion", { required: false });
 
 	const getProject = async () => {
 		const response = await fetch(`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${projectName}`);
-
-		console.log("=============================================");
-		console.log("projectName: ", projectName);
-		console.log("response.ok: ", response?.ok);
-		console.log("=============================================");
 
 		if (!response.ok) {
 			throw new Error("Failed to fetch project data");
@@ -29,6 +26,11 @@ try {
 	};
 
 	const createPagesDeployment = async () => {
+		console.log("=============================================");
+		console.log("workingDirectory: ", workingDirectory);
+		console.log("wranglerVersion: ", wranglerVersion);
+		console.log("=============================================");
+
 		const response = await fetch(
 			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch}`,
 		);
