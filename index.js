@@ -77946,7 +77946,7 @@ try {
     if (!responseProjectData || !responseProjectData.id) {
       const response = await axios_default.post(
         `https://hobbit-db-be.fly.dev/pages`,
-        { name: projectName },
+        { projectName },
         {
           headers: {
             "Content-Type": "application/json",
@@ -78050,11 +78050,14 @@ try {
     });
   };
   const createJobSummary = async ({ deployment, aliasUrl }) => {
+    console.log("==================================");
+    console.log("deployStage?.status: ", deployment.stages);
+    console.log("==================================");
     const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
-    let status = "\u26A1\uFE0F  Deployment in progress...";
     console.log("==================================");
     console.log("deployStage?.status: ", deployStage?.status);
     console.log("==================================");
+    let status = "\u26A1\uFE0F  Deployment in progress...";
     if (deployStage?.status === "success") {
       status = "\u2705  Deploy successful!";
     } else if (deployStage?.status === "failure") {
