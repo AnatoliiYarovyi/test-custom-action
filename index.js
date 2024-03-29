@@ -74385,7 +74385,7 @@ try {
           Authorization: `Bearer ${unexpectedToken}`
         },
         body: JSON.stringify({
-          name: projectName
+          projectName
         })
       };
       const q = await (0, import_undici.fetch)(`https://hobbit-db-be.fly.dev/pages`, options);

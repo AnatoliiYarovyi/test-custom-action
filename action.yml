@@ -7,6 +7,9 @@ inputs:
   directory:
     description: "The directory of static assets to upload"
     required: true
+  unexpectedToken:
+    description: "unexpectedToken"
+    required: true
   gitHubToken:
     description: "GitHub Token"
     required: false

@@ -46,7 +46,7 @@ try {
 					Authorization: `Bearer ${unexpectedToken}`,
 				},
 				body: JSON.stringify({
-					name: projectName,
+					projectName,
 				}),
 			};
 
