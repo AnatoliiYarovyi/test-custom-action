@@ -7,12 +7,12 @@ inputs:
   directory:
     description: "The directory of static assets to upload"
     required: true
-  gitHubToken:
-    description: "GitHub Token"
-    required: false
   branch:
     description: "The name of the branch you want to deploy to"
     required: true
+  gitHubToken:
+    description: "GitHub Token"
+    required: false
   workingDirectory:
     description: "The working directory in which to run Wrangler"
     required: false
