@@ -1,5 +1,5 @@
 name: "Test-deploy GitHub Action"
-description: "Publish to Cloudflare Pages"
+description: "Publish to Hobbit Pages"
 inputs:
   projectName:
     description: "The name of the Pages project to upload to"
