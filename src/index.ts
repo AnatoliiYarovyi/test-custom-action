@@ -33,7 +33,7 @@ try {
 		console.log("=============================================");
 
 		const response = await fetch(
-			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch}`,
+			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch ? branch : "main"}`,
 		);
 
 		if (!response.ok) {

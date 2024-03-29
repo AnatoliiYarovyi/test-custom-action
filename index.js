@@ -39791,8 +39791,8 @@ var require_github = __commonJS({
 // src/index.ts
 var import_core = __toESM(require_core());
 var import_github = __toESM(require_github());
-var import_process = require("process");
 var import_undici = __toESM(require_undici2());
+var import_process = require("process");
 try {
   const projectName = (0, import_core.getInput)("projectName", { required: true });
   const directory = (0, import_core.getInput)("directory", { required: true });
@@ -39815,7 +39815,7 @@ try {
     console.log("branch: ", branch, typeof branch, JSON.stringify(branch));
     console.log("=============================================");
     const response = await (0, import_undici.fetch)(
-      `https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch}`
+      `https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch ? branch : "main"}`
     );
     if (!response.ok) {
       throw new Error("Failed to fetch deployment data");
