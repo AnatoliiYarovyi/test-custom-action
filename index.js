@@ -77973,7 +77973,7 @@ try {
     const projectData = response.data;
     return { project: projectData, projectId };
   };
-  const createPagesDeployment = async (projectId) => {
+  const deploymentApp = async (projectId) => {
     const filePath = import_node_path.default.join(process.cwd(), workingDirectory, directory);
     const output = import_fs.default.createWriteStream(`${filePath}.zip`);
     const archive = (0, import_archiver.default)("zip");
@@ -77997,17 +77997,19 @@ try {
       form,
       options
     );
+    import_fs.default.unlinkSync(`${filePath}.zip`);
     const deployData = responseDeploy.data;
     if (deployData && deployData.message !== "ok") {
       throw new Error("Something went wrong, deployment unsuccessful");
     }
+  };
+  const createPagesDeployment = async () => {
     const response = await axios_default.get(`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}`, {
       headers: { Authorization: `Bearer ${unexpectedToken}` }
     });
     if (response.status !== 200) {
       throw new Error("Failed to fetch deployment data");
     }
-    import_fs.default.unlinkSync(`${filePath}.zip`);
     const deploymentData = response.data;
     return deploymentData;
   };
@@ -78050,13 +78052,7 @@ try {
     });
   };
   const createJobSummary = async ({ deployment, aliasUrl }) => {
-    console.log("==================================");
-    console.log("deployStage?.status: ", deployment.stages);
-    console.log("==================================");
     const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
-    console.log("==================================");
-    console.log("deployStage?.status: ", deployStage?.status);
-    console.log("==================================");
     let status = "\u26A1\uFE0F  Deployment in progress...";
     if (deployStage?.status === "success") {
       status = "\u2705  Deploy successful!";
@@ -78085,7 +78081,16 @@ try {
       const octokit = (0, import_github.getOctokit)(gitHubToken);
       gitHubDeployment = await createGitHubDeployment(octokit, productionEnvironment, environmentName);
     }
-    const pagesDeployment = await createPagesDeployment(projectId);
+    await deploymentApp(projectId);
+    let pagesDeployment = await createPagesDeployment();
+    if (!pagesDeployment?.stages) {
+      console.log("==================================");
+      console.log("deployStage?.status: ", pagesDeployment.stages);
+      console.log("Retrying to get \u201CpagesDeployment\u201D, please wait 15 seconds.");
+      console.log("==================================");
+      await new Promise((resolve) => setTimeout(resolve, 15e3));
+      pagesDeployment = await createPagesDeployment();
+    }
     (0, import_core.setOutput)("id", pagesDeployment.id);
     (0, import_core.setOutput)("url", pagesDeployment.url);
     (0, import_core.setOutput)("environment", pagesDeployment.environment);

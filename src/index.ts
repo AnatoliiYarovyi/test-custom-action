@@ -1,7 +1,6 @@
 import { getInput, setOutput, setFailed, summary } from "@actions/core";
 import type { Project, Deployment } from "@cloudflare/types";
 import { context, getOctokit } from "@actions/github";
-import { fetch } from "undici";
 import { env } from "process";
 import path from "node:path";
 import fs from "fs";
@@ -77,7 +76,7 @@ try {
 		return { project: projectData, projectId };
 	};
 
-	const createPagesDeployment = async (projectId: string) => {
+	const deploymentApp = async (projectId: string) => {
 		const filePath = path.join(process.cwd(), workingDirectory, directory);
 		const output = fs.createWriteStream(`${filePath}.zip`);
 		const archive = archiver("zip");
@@ -106,13 +105,16 @@ try {
 			form,
 			options,
 		);
+		fs.unlinkSync(`${filePath}.zip`);
 
 		const deployData = responseDeploy.data as { message: string };
 
 		if (deployData && deployData.message !== "ok") {
 			throw new Error("Something went wrong, deployment unsuccessful");
 		}
+	};
 
+	const createPagesDeployment = async () => {
 		const response = await axios.get(`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
@@ -120,8 +122,6 @@ try {
 		if (response.status !== 200) {
 			throw new Error("Failed to fetch deployment data");
 		}
-
-		fs.unlinkSync(`${filePath}.zip`);
 
 		const deploymentData = response.data as Deployment;
 		return deploymentData;
@@ -177,13 +177,7 @@ try {
 	};
 
 	const createJobSummary = async ({ deployment, aliasUrl }: { deployment: Deployment; aliasUrl: string }) => {
-		console.log("==================================");
-		console.log("deployStage?.status: ", deployment.stages);
-		console.log("==================================");
 		const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
-		console.log("==================================");
-		console.log("deployStage?.status: ", deployStage?.status);
-		console.log("==================================");
 
 		let status = "⚡️  Deployment in progress...";
 
@@ -221,8 +215,17 @@ try {
 			const octokit = getOctokit(gitHubToken);
 			gitHubDeployment = await createGitHubDeployment(octokit, productionEnvironment, environmentName);
 		}
+		await deploymentApp(projectId);
+		let pagesDeployment = await createPagesDeployment();
+		if (!pagesDeployment?.stages) {
+			console.log("==================================");
+			console.log("deployStage?.status: ", pagesDeployment.stages);
+			console.log("Retrying to get “pagesDeployment”, please wait 15 seconds.");
+			console.log("==================================");
 
-		const pagesDeployment = await createPagesDeployment(projectId);
+			await new Promise((resolve) => setTimeout(resolve, 15000));
+			pagesDeployment = await createPagesDeployment();
+		}
 		setOutput("id", pagesDeployment.id);
 		setOutput("url", pagesDeployment.url);
 		setOutput("environment", pagesDeployment.environment);
