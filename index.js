@@ -74421,17 +74421,24 @@ try {
       method: "POST",
       headers: {
         Authorization: `Bearer ${unexpectedToken}`,
-        ...form.getHeaders()
+        "Content-Type": "multipart/form-data; boundary=<calculated when request is sent>",
+        "Accept-Encoding": "gzip, deflate, br"
+        // ...form.getHeaders(),
       },
       body: form
     };
-    await (0, import_undici.fetch)(`https://hobbit-db-be.fly.dev/pages/${projectId}/deployments`, options);
+    const responseDeploy = await (0, import_undici.fetch)(`https://hobbit-db-be.fly.dev/pages/${projectId}/deployments`, options);
+    const deployData = await responseDeploy.json();
+    if (!deployData || !deployData?.message) {
+      throw new Error("Something went wrong, deployment unsuccessful");
+    }
     const response = await (0, import_undici.fetch)(`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}`, {
       headers: { Authorization: `Bearer ${unexpectedToken}` }
     });
     if (!response.ok) {
       throw new Error("Failed to fetch deployment data");
     }
+    import_fs.default.unlinkSync(`${filePath}.zip`);
     const deploymentData = await response.json();
     return deploymentData;
   };
