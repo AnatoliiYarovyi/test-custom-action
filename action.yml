@@ -1,12 +1,6 @@
 name: "Test-deploy GitHub Action"
 description: "Publish to Cloudflare Pages"
 inputs:
-  apiToken:
-    description: "Cloudflare API Token"
-    required: true
-  accountId:
-    description: "Cloudflare Account ID"
-    required: true
   projectName:
     description: "The name of the Pages project to upload to"
     required: true
@@ -18,7 +12,7 @@ inputs:
     required: false
   branch:
     description: "The name of the branch you want to deploy to"
-    required: false
+    required: true
   workingDirectory:
     description: "The working directory in which to run Wrangler"
     required: false
