@@ -7,6 +7,7 @@ import path from "node:path";
 import fs from "fs";
 import archiver from "archiver";
 import FormData from "form-data";
+import axios from "axios";
 
 type Octokit = ReturnType<typeof getOctokit>;
 
@@ -31,96 +32,99 @@ try {
 	const workingDirectory = getInput("workingDirectory", { required: false });
 
 	const getProjectId = async (): Promise<string> => {
-		const responsePages = await fetch(`https://hobbit-db-be.fly.dev/pages`, {
+		const responsePages = await axios.get(`https://hobbit-db-be.fly.dev/pages`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
-		const responsePagesData = (await responsePages.json()) as IResponsePagesData;
+		const responsePagesData = responsePages.data as IResponsePagesData;
 
 		const responseProjectData = responsePagesData.items.find((el) => el.name === projectName);
 
 		if (!responseProjectData || !responseProjectData.id) {
-			const options = {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${unexpectedToken}`,
+			const response = await axios.post(
+				`https://hobbit-db-be.fly.dev/pages`,
+				{ name: projectName },
+				{
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${unexpectedToken}`,
+					},
 				},
-				body: JSON.stringify({
-					projectName,
-				}),
-			};
+			);
 
-			const q = await fetch(`https://hobbit-db-be.fly.dev/pages`, options);
-			const qData = (await q.json()) as IResponsePagesCreate;
-			if (q.status !== 200) {
+			const qData = response.data as IResponsePagesCreate;
+			if (response.status !== 200) {
 				throw new Error("Project name not available");
 			}
 
 			return qData.id;
 		}
 
-		return responseProjectData?.id;
+		return responseProjectData.id;
 	};
 
 	const getProject = async () => {
 		const projectId = await getProjectId();
 
-		const response = await fetch(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`, {
+		const response = await axios.get(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
 
-		if (!response.ok) {
+		if (response.status !== 200) {
 			throw new Error("Failed to fetch project data");
 		}
 
-		const projectData = (await response.json()) as Project;
+		const projectData = response.data as Project;
 		return { project: projectData, projectId };
 	};
 
 	const createPagesDeployment = async (projectId: string) => {
 		const filePath = path.join(process.cwd(), workingDirectory, directory);
-
 		const output = fs.createWriteStream(`${filePath}.zip`);
 		const archive = archiver("zip");
 
 		archive.pipe(output);
-
 		archive.directory(filePath, false);
 
-		await archive.finalize();
+		await new Promise((resolve, reject) => {
+			output.on("close", resolve);
+			output.on("error", reject);
+			archive.finalize();
+		});
 
 		const form = new FormData();
 		form.append("file", fs.createReadStream(`${filePath}.zip`));
 
 		const options = {
-			method: "POST",
 			headers: {
 				Authorization: `Bearer ${unexpectedToken}`,
-				"Content-Type": "multipart/form-data; boundary=<calculated when request is sent>",
-				"Accept-Encoding": "gzip, deflate, br",
-				// ...form.getHeaders(),
+				...form.getHeaders(),
 			},
-			body: form,
 		};
 
-		const responseDeploy = await fetch(`https://hobbit-db-be.fly.dev/pages/${projectId}/deployments`, options);
-		const deployData = (await responseDeploy.json()) as { message: string };
-		if (!deployData || !deployData?.message) {
+		const responseDeploy = await axios.post(
+			`https://hobbit-db-be.fly.dev/pages/${projectId}/deployments`,
+			form,
+			options,
+		);
+
+		const deployData = responseDeploy.data as { message: string };
+
+		if (deployData && deployData.message !== "ok") {
 			throw new Error("Something went wrong, deployment unsuccessful");
 		}
 
-		const response = await fetch(`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}`, {
+		const response = await axios.get(`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
 
-		if (!response.ok) {
+		if (response.status !== 200) {
 			throw new Error("Failed to fetch deployment data");
 		}
 
 		fs.unlinkSync(`${filePath}.zip`);
 
-		const deploymentData = await response.json();
-		return deploymentData as Deployment;
+		const deploymentData = response.data as Deployment;
+		return deploymentData;
 	};
 
 	const githubBranch = env.GITHUB_HEAD_REF || env.GITHUB_REF_NAME;
