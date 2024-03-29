@@ -135,7 +135,7 @@ try {
 			repo: context.repo.repo,
 			ref: githubBranch || context.ref,
 			auto_merge: false,
-			description: "Cloudflare Pages",
+			description: "Hobbit Pages",
 			required_contexts: [],
 			environment,
 			production_environment: productionEnvironment,
