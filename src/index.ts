@@ -6,6 +6,9 @@ import { env } from "process";
 
 type Octokit = ReturnType<typeof getOctokit>;
 
+const apiToken =
+	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlOGE4Y2VkZS04NjE3LTRjZmYtOTA5Ny0wNjYxODNjNDUzYmYiLCJleHBpcmVzIjoiMjAyNC0wOS0xMlQxODoxNjoxNi40MzRaIn0.8tmIRzWeDo43-Fj1WZFCVTRw7yLkds0zNxadmAv-Gx4";
+
 try {
 	const projectName = getInput("projectName", { required: true });
 	const directory = getInput("directory", { required: true });
@@ -15,7 +18,9 @@ try {
 	// const wranglerVersion = getInput("wranglerVersion", { required: false });
 
 	const getProject = async () => {
-		const response = await fetch(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`);
+		const response = await fetch(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`, {
+			headers: { Authorization: `Bearer ${apiToken}` },
+		});
 
 		if (!response.ok) {
 			throw new Error("Failed to fetch project data");
@@ -28,6 +33,9 @@ try {
 	const createPagesDeployment = async () => {
 		const response = await fetch(
 			`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}/${directory}/${branch}`,
+			{
+				headers: { Authorization: `Bearer ${apiToken}` },
+			},
 		);
 
 		if (!response.ok) {

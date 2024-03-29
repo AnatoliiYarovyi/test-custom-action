@@ -39793,13 +39793,16 @@ var import_core = __toESM(require_core());
 var import_github = __toESM(require_github());
 var import_undici = __toESM(require_undici2());
 var import_process = require("process");
+var apiToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlOGE4Y2VkZS04NjE3LTRjZmYtOTA5Ny0wNjYxODNjNDUzYmYiLCJleHBpcmVzIjoiMjAyNC0wOS0xMlQxODoxNjoxNi40MzRaIn0.8tmIRzWeDo43-Fj1WZFCVTRw7yLkds0zNxadmAv-Gx4";
 try {
   const projectName = (0, import_core.getInput)("projectName", { required: true });
   const directory = (0, import_core.getInput)("directory", { required: true });
   const gitHubToken = (0, import_core.getInput)("gitHubToken", { required: false });
   const branch = (0, import_core.getInput)("branch", { required: false });
   const getProject = async () => {
-    const response = await (0, import_undici.fetch)(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`);
+    const response = await (0, import_undici.fetch)(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`, {
+      headers: { Authorization: `Bearer ${apiToken}` }
+    });
     if (!response.ok) {
       throw new Error("Failed to fetch project data");
     }
@@ -39808,7 +39811,10 @@ try {
   };
   const createPagesDeployment = async () => {
     const response = await (0, import_undici.fetch)(
-      `https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}/${directory}/${branch}`
+      `https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}/${directory}/${branch}`,
+      {
+        headers: { Authorization: `Bearer ${apiToken}` }
+      }
     );
     if (!response.ok) {
       throw new Error("Failed to fetch deployment data");
