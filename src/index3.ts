@@ -3,8 +3,6 @@ import type { Project, Deployment } from "@cloudflare/types";
 import { context, getOctokit } from "@actions/github";
 import { fetch } from "undici";
 import { env } from "process";
-import shellac from "shellac";
-import path from "node:path";
 
 type Octokit = ReturnType<typeof getOctokit>;
 
@@ -15,8 +13,6 @@ try {
 	const branch = getInput("branch", { required: false });
 	const workingDirectory = getInput("workingDirectory", { required: false });
 	const wranglerVersion = getInput("wranglerVersion", { required: false });
-	const apiToken = getInput("apiToken", { required: false });
-	const accountId = getInput("accountId", { required: false });
 
 	const getProject = async () => {
 		const response = await fetch(`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${projectName}`);
@@ -30,15 +26,11 @@ try {
 	};
 
 	const createPagesDeployment = async () => {
-		// TODO: Replace this with an API call to wrangler so we can get back a full deployment response object
-		await shellac.in(path.join(process.cwd(), workingDirectory))`
-    $ export CLOUDFLARE_API_TOKEN="${apiToken}"
-    if ${accountId} {
-      $ export CLOUDFLARE_ACCOUNT_ID="${accountId}"
-    }
-  
-    $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
-    `;
+		console.log("=============================================");
+		console.log("workingDirectory: ", workingDirectory, typeof workingDirectory, JSON.stringify(workingDirectory));
+		console.log("wranglerVersion: ", wranglerVersion, typeof wranglerVersion, JSON.stringify(wranglerVersion));
+		console.log("branch: ", branch, typeof branch, JSON.stringify(branch));
+		console.log("=============================================");
 
 		const response = await fetch(
 			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch ? branch : "main"}`,
