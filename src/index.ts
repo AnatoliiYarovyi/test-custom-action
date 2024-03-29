@@ -3,46 +3,109 @@ import type { Project, Deployment } from "@cloudflare/types";
 import { context, getOctokit } from "@actions/github";
 import { fetch } from "undici";
 import { env } from "process";
-import shellac from "shellac";
 import path from "node:path";
+import fs from "fs";
+import archiver from "archiver";
+import FormData from "form-data";
 
 type Octokit = ReturnType<typeof getOctokit>;
+
+export interface IResponsePagesData {
+	items: IResponsePagesItem[];
+}
+export interface IResponsePagesItem {
+	id: string;
+	name: string;
+	createdAt: Date;
+}
+export interface IResponsePagesCreate {
+	id: string;
+}
 
 try {
 	const projectName = getInput("projectName", { required: true });
 	const directory = getInput("directory", { required: true });
+	const unexpectedToken = getInput("unexpectedToken", { required: true });
 	const gitHubToken = getInput("gitHubToken", { required: false });
 	const branch = getInput("branch", { required: false });
 	const workingDirectory = getInput("workingDirectory", { required: false });
-	const wranglerVersion = getInput("wranglerVersion", { required: false });
-	const apiToken = getInput("apiToken", { required: false });
-	const accountId = getInput("accountId", { required: false });
+
+	const getProjectId = async (): Promise<string> => {
+		const responsePages = await fetch(`https://hobbit-db-be.fly.dev/pages`, {
+			headers: { Authorization: `Bearer ${unexpectedToken}` },
+		});
+		const responsePagesData = (await responsePages.json()) as IResponsePagesData;
+
+		const responseProjectData = responsePagesData.items.find((el) => el.name === projectName);
+
+		if (!responseProjectData || !responseProjectData.id) {
+			const options = {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${unexpectedToken}`,
+				},
+				body: JSON.stringify({
+					name: projectName,
+				}),
+			};
+
+			const q = await fetch(`https://hobbit-db-be.fly.dev/pages`, options);
+			const qData = (await q.json()) as IResponsePagesCreate;
+			if (q.status !== 200) {
+				throw new Error("Project name not available");
+			}
+
+			return qData.id;
+		}
+
+		return responseProjectData?.id;
+	};
 
 	const getProject = async () => {
-		const response = await fetch(`https://proxy-cloudflare-production.up.railway.app/proxy/getProject/${projectName}`);
+		const projectId = await getProjectId();
+
+		const response = await fetch(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`, {
+			headers: { Authorization: `Bearer ${unexpectedToken}` },
+		});
 
 		if (!response.ok) {
 			throw new Error("Failed to fetch project data");
 		}
 
-		const projectData = await response.json();
-		return projectData as Project;
+		const projectData = (await response.json()) as Project;
+		return { project: projectData, projectId };
 	};
 
-	const createPagesDeployment = async () => {
-		// TODO: Replace this with an API call to wrangler so we can get back a full deployment response object
-		await shellac.in(path.join(process.cwd(), workingDirectory))`
-    $ export CLOUDFLARE_API_TOKEN="${apiToken}"
-    if ${accountId} {
-      $ export CLOUDFLARE_ACCOUNT_ID="${accountId}"
-    }
-  
-    $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
-    `;
+	const createPagesDeployment = async (projectId: string) => {
+		const filePath = path.join(process.cwd(), workingDirectory, directory);
 
-		const response = await fetch(
-			`https://proxy-cloudflare-production.up.railway.app/proxy/getDeployments/${projectName}/${directory}/${branch ? branch : "main"}`,
-		);
+		const output = fs.createWriteStream(`${filePath}.zip`);
+		const archive = archiver("zip");
+
+		archive.pipe(output);
+
+		archive.directory(filePath, false);
+
+		await archive.finalize();
+
+		const form = new FormData();
+		form.append("file", fs.createReadStream(`${filePath}.zip`));
+
+		const options = {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${unexpectedToken}`,
+				...form.getHeaders(),
+			},
+			body: form,
+		};
+
+		await fetch(`https://hobbit-db-be.fly.dev/pages/${projectId}/deployments`, options);
+
+		const response = await fetch(`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}`, {
+			headers: { Authorization: `Bearer ${unexpectedToken}` },
+		});
 
 		if (!response.ok) {
 			throw new Error("Failed to fetch deployment data");
@@ -132,7 +195,7 @@ try {
 	};
 
 	(async () => {
-		const project = await getProject();
+		const { project, projectId } = await getProject();
 
 		const productionEnvironment = githubBranch === project.production_branch || branch === project.production_branch;
 		const environmentName = `${projectName} (${productionEnvironment ? "Production" : "Preview"})`;
@@ -144,7 +207,7 @@ try {
 			gitHubDeployment = await createGitHubDeployment(octokit, productionEnvironment, environmentName);
 		}
 
-		const pagesDeployment = await createPagesDeployment();
+		const pagesDeployment = await createPagesDeployment(projectId);
 		setOutput("id", pagesDeployment.id);
 		setOutput("url", pagesDeployment.url);
 		setOutput("environment", pagesDeployment.environment);
