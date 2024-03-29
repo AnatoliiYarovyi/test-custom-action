@@ -78046,7 +78046,7 @@ try {
       environment_url: url2,
       production_environment: productionEnvironment,
       // log_url: `https://dash.cloudflare.com/${accountId}/pages/view/${projectName}/${deploymentId}`,
-      description: "Cloudflare Pages",
+      description: "Hobbit Pages",
       state: "success",
       auto_inactive: false
     });
@@ -78059,13 +78059,14 @@ try {
     } else if (deployStage?.status === "failure") {
       status = "\u{1F6AB}  Deployment failed";
     }
+    const lastCommit = deployment.deployment_trigger.metadata.commit_hash ? deployment.deployment_trigger.metadata.commit_hash.substring(0, 8) : "None";
     await import_core.summary.addRaw(
       `
-# Deploying with Cloudflare Pages
+# Deploying with Hobbit Pages
 
 | Name                    | Result |
 | ----------------------- | - |
-| **Last commit:**        | \`${deployment.deployment_trigger.metadata.commit_hash.substring(0, 8)}\` |
+| **Last commit:**        | \`${lastCommit}\` |
 | **Status**:             | ${status} |
 | **Preview URL**:        | ${deployment.url} |
 | **Branch Preview URL**: | ${aliasUrl} |
@@ -78086,9 +78087,9 @@ try {
     if (!pagesDeployment?.stages) {
       console.log("==================================");
       console.log("deployStage?.status: ", pagesDeployment.stages);
-      console.log("Retrying to get \u201CpagesDeployment\u201D, please wait 15 seconds.");
+      console.log("Retrying to get \u201CpagesDeployment\u201D, please wait 20 seconds.");
       console.log("==================================");
-      await new Promise((resolve) => setTimeout(resolve, 15e3));
+      await new Promise((resolve) => setTimeout(resolve, 2e4));
       pagesDeployment = await createPagesDeployment();
     }
     (0, import_core.setOutput)("id", pagesDeployment.id);
