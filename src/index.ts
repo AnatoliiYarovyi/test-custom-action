@@ -22,6 +22,8 @@ export interface IResponsePagesCreate {
 	id: string;
 }
 
+const domains: string[] = [];
+
 try {
 	const projectName = getInput("projectName", { required: true });
 	const directory = getInput("directory", { required: true });
@@ -73,6 +75,8 @@ try {
 		}
 
 		const projectData = response.data as Project;
+		domains.push(...projectData.domains);
+
 		return { project: projectData, projectId };
 	};
 
@@ -187,16 +191,23 @@ try {
 			status = "🚫  Deployment failed";
 		}
 
+		const urls = domains.reduce((acc, el) => {
+			acc += `https://${el}\n`;
+
+			return acc;
+		}, ``);
+
 		await summary
 			.addRaw(
 				`
 # Deploying with Hobbit Pages
 
-| Name                    | Result |
-| ----------------------- | - |
-| **Status**:             | ${status} |
-| **Preview URL**:        | ${deployment.url} |
-| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes. There will be no such delays in the future. |
+| Name              | Result |
+| ----------------- | - |
+| **Status**:       | ${status} |
+| **URL**:          | ${urls} |
+| **Preview URL**:  | ${deployment.url} |
+| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes.\nThere will be no such delays in the future. |
       `,
 			)
 			.write();

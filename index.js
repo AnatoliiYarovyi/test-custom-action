@@ -77930,6 +77930,7 @@ var {
 } = axios_default;
 
 // src/index.ts
+var domains = [];
 try {
   const projectName = (0, import_core.getInput)("projectName", { required: true });
   const directory = (0, import_core.getInput)("directory", { required: true });
@@ -77971,6 +77972,7 @@ try {
       throw new Error("Failed to fetch project data");
     }
     const projectData = response.data;
+    domains.push(...projectData.domains);
     return { project: projectData, projectId };
   };
   const deploymentApp = async (projectId) => {
@@ -78059,15 +78061,22 @@ try {
     } else if (deployStage?.status === "failure") {
       status = "\u{1F6AB}  Deployment failed";
     }
+    const urls = domains.reduce((acc, el) => {
+      acc += `https://${el}
+`;
+      return acc;
+    }, ``);
     await import_core.summary.addRaw(
       `
 # Deploying with Hobbit Pages
 
-| Name                    | Result |
-| ----------------------- | - |
-| **Status**:             | ${status} |
-| **Preview URL**:        | ${deployment.url} |
-| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes. There will be no such delays in the future. |
+| Name              | Result |
+| ----------------- | - |
+| **Status**:       | ${status} |
+| **URL**:          | ${urls} |
+| **Preview URL**:  | ${deployment.url} |
+| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes.
+There will be no such delays in the future. |
       `
     ).write();
   };
