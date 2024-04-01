@@ -192,7 +192,7 @@ try {
 		}
 
 		const urls = domains.reduce((acc, el) => {
-			acc += `https://${el}\n`;
+			acc += `https://${el}<br>`;
 
 			return acc;
 		}, ``);
@@ -207,7 +207,7 @@ try {
 | **Status**:       | ${status} |
 | **URL**:          | ${urls} |
 | **Preview URL**:  | ${deployment.url} |
-| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes.\nThere will be no such delays in the future. |
+| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes.<br>There will be no such delays in the future. |
       `,
 			)
 			.write();

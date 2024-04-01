@@ -78062,8 +78062,7 @@ try {
       status = "\u{1F6AB}  Deployment failed";
     }
     const urls = domains.reduce((acc, el) => {
-      acc += `https://${el}
-`;
+      acc += `https://${el}<br>`;
       return acc;
     }, ``);
     await import_core.summary.addRaw(
@@ -78075,8 +78074,7 @@ try {
 | **Status**:       | ${status} |
 | **URL**:          | ${urls} |
 | **Preview URL**:  | ${deployment.url} |
-| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes.
-There will be no such delays in the future. |
+| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes.<br>There will be no such delays in the future. |
       `
     ).write();
   };
