@@ -169,14 +169,14 @@ try {
 			environment: environmentName,
 			environment_url: url,
 			production_environment: productionEnvironment,
-			// log_url: `https://dash.cloudflare.com/${accountId}/pages/view/${projectName}/${deploymentId}`,
+			// log_url: ``,
 			description: "Hobbit Pages",
 			state: "success",
 			auto_inactive: false,
 		});
 	};
 
-	const createJobSummary = async ({ deployment, aliasUrl }: { deployment: Deployment; aliasUrl: string }) => {
+	const createJobSummary = async ({ deployment }: { deployment: Deployment }) => {
 		const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
 
 		let status = "⚡️  Deployment in progress...";
@@ -187,10 +187,6 @@ try {
 			status = "🚫  Deployment failed";
 		}
 
-		const lastCommit = deployment.deployment_trigger.metadata.commit_hash
-			? deployment.deployment_trigger.metadata.commit_hash.substring(0, 8)
-			: "None";
-
 		await summary
 			.addRaw(
 				`
@@ -198,10 +194,9 @@ try {
 
 | Name                    | Result |
 | ----------------------- | - |
-| **Last commit:**        | \`${lastCommit}\` |
 | **Status**:             | ${status} |
 | **Preview URL**:        | ${deployment.url} |
-| **Branch Preview URL**: | ${aliasUrl} |
+| **Notification**: | If this is your first deployment, the page will start working in 5-10 minutes. There will be no such delays in the future. |
       `,
 			)
 			.write();
@@ -223,8 +218,9 @@ try {
 		let pagesDeployment = await createPagesDeployment();
 		if (!pagesDeployment?.stages) {
 			console.log("==================================");
-			console.log("deployStage?.status: ", pagesDeployment.stages);
-			console.log("Retrying to get “pagesDeployment”, please wait 20 seconds.");
+			console.log("Deploy status: ", pagesDeployment.stages);
+			console.log("Retrying to get “Deploy status”, please wait 20 seconds.");
+			console.log("This sometimes happens when you first deploy a new project");
 			console.log("==================================");
 
 			await new Promise((resolve) => setTimeout(resolve, 20000));
@@ -234,13 +230,7 @@ try {
 		setOutput("url", pagesDeployment.url);
 		setOutput("environment", pagesDeployment.environment);
 
-		let alias = pagesDeployment.url;
-		if (!productionEnvironment && pagesDeployment.aliases && pagesDeployment.aliases.length > 0) {
-			alias = pagesDeployment.aliases[0];
-		}
-		setOutput("alias", alias);
-
-		await createJobSummary({ deployment: pagesDeployment, aliasUrl: alias });
+		await createJobSummary({ deployment: pagesDeployment });
 
 		if (gitHubDeployment) {
 			const octokit = getOctokit(gitHubToken);
