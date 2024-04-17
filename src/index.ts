@@ -35,7 +35,7 @@ try {
 
 	const getProjectId = async (): Promise<string> => {
 		try {
-			const responsePages = await axios.get(`https://api.unexpected.app/pages?databaseId=${databaseId}`, {
+			const responsePages = await axios.get(`https://api.unexpected.app/pages/dfd/dfd?databaseId=${databaseId}`, {
 				headers: { Authorization: `Bearer ${unexpectedToken}` },
 			});
 			const responsePagesData = responsePages.data as IResponsePagesData;
