@@ -77941,7 +77941,7 @@ try {
   const workingDirectory = (0, import_core.getInput)("workingDirectory", { required: false });
   const getProjectId = async () => {
     try {
-      const responsePages = await axios_default.get(`https://api.unexpected.app/pages/dfd/dfd?databaseId=${databaseId}`, {
+      const responsePages = await axios_default.get(`https://api.unexpected.app/pages?databaseId=${databaseId}`, {
         headers: { Authorization: `Bearer ${unexpectedToken}` }
       });
       const responsePagesData = responsePages.data;
