@@ -4,6 +4,9 @@ inputs:
   projectName:
     description: "The name of the Pages project to upload to"
     required: true
+  databaseId:
+    description: "The id db"
+    required: true
   directory:
     description: "The directory of static assets to upload"
     required: true
