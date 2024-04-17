@@ -77940,80 +77940,104 @@ try {
   const branch = (0, import_core.getInput)("branch", { required: false });
   const workingDirectory = (0, import_core.getInput)("workingDirectory", { required: false });
   const getProjectId = async () => {
-    const responsePages = await axios_default.get(`https://api.unexpected.app/pages?databaseId=${databaseId}`, {
-      headers: { Authorization: `Bearer ${unexpectedToken}` }
-    });
-    const responsePagesData = responsePages.data;
-    const responseProjectData = responsePagesData.items.find((el) => el.name === projectName);
-    if (!responseProjectData || !responseProjectData.id) {
-      const response = await axios_default.post(
-        `https://api.unexpected.app/pages`,
-        {
-          projectName,
-          databaseId
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${unexpectedToken}`
+    try {
+      const responsePages = await axios_default.get(`https://api.unexpected.app/pages?databaseId=${databaseId}`, {
+        headers: { Authorization: `Bearer ${unexpectedToken}` }
+      });
+      const responsePagesData = responsePages.data;
+      const responseProjectData = responsePagesData.items.find((el) => el.name === projectName);
+      if (!responseProjectData || !responseProjectData.id) {
+        const response = await axios_default.post(
+          `https://api.unexpected.app/pages`,
+          {
+            projectName,
+            databaseId
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${unexpectedToken}`
+            }
           }
+        );
+        const qData = response.data;
+        if (response.status !== 200) {
+          throw new Error("Project name not available");
         }
-      );
-      const qData = response.data;
-      if (response.status !== 200) {
-        throw new Error("Project name not available");
+        return qData.id;
       }
-      return qData.id;
+      return responseProjectData.id;
+    } catch (error) {
+      console.error("Error occurred:", error?.message || error);
+      throw new Error("Failed to get project ID");
     }
-    return responseProjectData.id;
   };
   const getProject = async () => {
-    const projectId = await getProjectId();
-    const response = await axios_default.get(`https://api.unexpected.app/pages/cf/projects/${projectName}`, {
-      headers: { Authorization: `Bearer ${unexpectedToken}` }
-    });
-    if (response.status !== 200) {
-      throw new Error("Failed to fetch project data");
+    try {
+      const projectId = await getProjectId();
+      const response = await axios_default.get(`https://api.unexpected.app/pages/cf/projects/${projectName}`, {
+        headers: { Authorization: `Bearer ${unexpectedToken}` }
+      });
+      if (response.status !== 200) {
+        throw new Error("Failed to fetch project data");
+      }
+      const projectData = response.data;
+      domains.push(...projectData.domains);
+      return { project: projectData, projectId };
+    } catch (error) {
+      console.error("Error occurred:", error?.message || error);
+      throw new Error("Failed to get project data");
     }
-    const projectData = response.data;
-    domains.push(...projectData.domains);
-    return { project: projectData, projectId };
   };
   const deploymentApp = async (projectId) => {
-    const filePath = import_node_path.default.join(process.cwd(), workingDirectory, directory);
-    const output = import_fs.default.createWriteStream(`${filePath}.zip`);
-    const archive = (0, import_archiver.default)("zip");
-    archive.pipe(output);
-    archive.directory(filePath, false);
-    await new Promise((resolve, reject) => {
-      output.on("close", resolve);
-      output.on("error", reject);
-      archive.finalize();
-    });
-    const form = new import_form_data2.default();
-    form.append("file", import_fs.default.createReadStream(`${filePath}.zip`));
-    const options = {
-      headers: {
-        Authorization: `Bearer ${unexpectedToken}`,
-        ...form.getHeaders()
+    try {
+      const filePath = import_node_path.default.join(process.cwd(), workingDirectory, directory);
+      const output = import_fs.default.createWriteStream(`${filePath}.zip`);
+      const archive = (0, import_archiver.default)("zip");
+      archive.pipe(output);
+      archive.directory(filePath, false);
+      await new Promise((resolve, reject) => {
+        output.on("close", resolve);
+        output.on("error", reject);
+        archive.finalize();
+      });
+      const form = new import_form_data2.default();
+      form.append("file", import_fs.default.createReadStream(`${filePath}.zip`));
+      const options = {
+        headers: {
+          Authorization: `Bearer ${unexpectedToken}`,
+          ...form.getHeaders()
+        }
+      };
+      const responseDeploy = await axios_default.post(
+        `https://api.unexpected.app/pages/${projectId}/deployments`,
+        form,
+        options
+      );
+      import_fs.default.unlinkSync(`${filePath}.zip`);
+      const deployData = responseDeploy.data;
+      if (deployData && deployData.message !== "ok") {
+        throw new Error("Something went wrong, deployment unsuccessful");
       }
-    };
-    const responseDeploy = await axios_default.post(`https://api.unexpected.app/pages/${projectId}/deployments`, form, options);
-    import_fs.default.unlinkSync(`${filePath}.zip`);
-    const deployData = responseDeploy.data;
-    if (deployData && deployData.message !== "ok") {
-      throw new Error("Something went wrong, deployment unsuccessful");
+    } catch (error) {
+      console.error("Error occurred:", error?.message || error);
+      throw new Error("Failed to deploy app");
     }
   };
   const createPagesDeployment = async () => {
-    const response = await axios_default.get(`https://api.unexpected.app/pages/cf/deployments/${projectName}`, {
-      headers: { Authorization: `Bearer ${unexpectedToken}` }
-    });
-    if (response.status !== 200) {
-      throw new Error("Failed to fetch deployment data");
+    try {
+      const response = await axios_default.get(`https://api.unexpected.app/pages/cf/deployments/${projectName}`, {
+        headers: { Authorization: `Bearer ${unexpectedToken}` }
+      });
+      if (response.status !== 200) {
+        throw new Error("Failed to fetch deployment data");
+      }
+      const deploymentData = response.data;
+      return deploymentData;
+    } catch (error) {
+      console.error("Error occurred:", error?.message || error);
+      throw new Error("Failed to get deployment data");
     }
-    const deploymentData = response.data;
-    return deploymentData;
   };
   const githubBranch = import_process.env.GITHUB_HEAD_REF || import_process.env.GITHUB_REF_NAME;
   const createGitHubDeployment = async (octokit, productionEnvironment, environment) => {
