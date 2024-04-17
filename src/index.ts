@@ -26,6 +26,7 @@ const domains: string[] = [];
 
 try {
 	const projectName = getInput("projectName", { required: true });
+	const databaseId = getInput("databaseId", { required: true });
 	const directory = getInput("directory", { required: true });
 	const unexpectedToken = getInput("unexpectedToken", { required: true });
 	const gitHubToken = getInput("gitHubToken", { required: false });
@@ -33,7 +34,7 @@ try {
 	const workingDirectory = getInput("workingDirectory", { required: false });
 
 	const getProjectId = async (): Promise<string> => {
-		const responsePages = await axios.get(`https://api.unexpected.app/pages`, {
+		const responsePages = await axios.get(`https://api.unexpected.app/pages?databaseId=${databaseId}`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
 		const responsePagesData = responsePages.data as IResponsePagesData;
@@ -43,7 +44,10 @@ try {
 		if (!responseProjectData || !responseProjectData.id) {
 			const response = await axios.post(
 				`https://api.unexpected.app/pages`,
-				{ projectName },
+				{
+					projectName,
+					databaseId,
+				},
 				{
 					headers: {
 						"Content-Type": "application/json",
