@@ -33,7 +33,7 @@ try {
 	const workingDirectory = getInput("workingDirectory", { required: false });
 
 	const getProjectId = async (): Promise<string> => {
-		const responsePages = await axios.get(`https://hobbit-db-be.fly.dev/pages`, {
+		const responsePages = await axios.get(`https://api.unexpected.app/pages`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
 		const responsePagesData = responsePages.data as IResponsePagesData;
@@ -42,7 +42,7 @@ try {
 
 		if (!responseProjectData || !responseProjectData.id) {
 			const response = await axios.post(
-				`https://hobbit-db-be.fly.dev/pages`,
+				`https://api.unexpected.app/pages`,
 				{ projectName },
 				{
 					headers: {
@@ -66,7 +66,7 @@ try {
 	const getProject = async () => {
 		const projectId = await getProjectId();
 
-		const response = await axios.get(`https://hobbit-db-be.fly.dev/pages/cf/projects/${projectName}`, {
+		const response = await axios.get(`https://api.unexpected.app/pages/cf/projects/${projectName}`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
 
@@ -104,11 +104,7 @@ try {
 			},
 		};
 
-		const responseDeploy = await axios.post(
-			`https://hobbit-db-be.fly.dev/pages/${projectId}/deployments`,
-			form,
-			options,
-		);
+		const responseDeploy = await axios.post(`https://api.unexpected.app/pages/${projectId}/deployments`, form, options);
 		fs.unlinkSync(`${filePath}.zip`);
 
 		const deployData = responseDeploy.data as { message: string };
@@ -119,7 +115,7 @@ try {
 	};
 
 	const createPagesDeployment = async () => {
-		const response = await axios.get(`https://hobbit-db-be.fly.dev/pages/cf/deployments/${projectName}`, {
+		const response = await axios.get(`https://api.unexpected.app/pages/cf/deployments/${projectName}`, {
 			headers: { Authorization: `Bearer ${unexpectedToken}` },
 		});
 
