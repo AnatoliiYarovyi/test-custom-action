@@ -76,9 +76,12 @@ try {
 		try {
 			const projectId = await getProjectId();
 
-			const response = await axios.get(`https://api.unexpected.app/pages/cf/projects/${projectName}`, {
-				headers: { Authorization: `Bearer ${unexpectedToken}` },
-			});
+			const response = await axios.get(
+				`https://api.unexpected.app/pages/cf/projects/${projectName}?databaseId=${databaseId}`,
+				{
+					headers: { Authorization: `Bearer ${unexpectedToken}` },
+				},
+			);
 
 			if (response.status !== 200) {
 				throw new Error("Failed to fetch project data");
