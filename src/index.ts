@@ -44,7 +44,7 @@ try {
 
 			if (!responseProjectData || !responseProjectData.id) {
 				const response = await axios.post(
-					`https://api.unexpected.app/pages`,
+					`https://api.unexpected.app/pages?databaseId=${databaseId}`,
 					{
 						projectName,
 						databaseId,
@@ -123,7 +123,7 @@ try {
 			};
 
 			const responseDeploy = await axios.post(
-				`https://api.unexpected.app/pages/${projectId}/deployments`,
+				`https://api.unexpected.app/pages/${projectId}/deployments?databaseId=${databaseId}`,
 				form,
 				options,
 			);
@@ -142,9 +142,12 @@ try {
 
 	const createPagesDeployment = async () => {
 		try {
-			const response = await axios.get(`https://api.unexpected.app/pages/cf/deployments/${projectName}`, {
-				headers: { Authorization: `Bearer ${unexpectedToken}` },
-			});
+			const response = await axios.get(
+				`https://api.unexpected.app/pages/cf/deployments/${projectName}?databaseId=${databaseId}`,
+				{
+					headers: { Authorization: `Bearer ${unexpectedToken}` },
+				},
+			);
 
 			if (response.status !== 200) {
 				throw new Error("Failed to fetch deployment data");
